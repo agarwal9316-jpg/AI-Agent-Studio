@@ -1,7 +1,7 @@
 # UI Map
 
 **Toolkit:** CustomTkinter  
-**Version:** 1.27.90 (keep in sync with `app/version.py`)
+**Version:** 1.27.93 (keep in sync with `app/version.py`)
 
 ---
 
@@ -72,7 +72,7 @@ Chat · Home · Agents · Tasks · Runs · Chats · Memory · Projects · Compan
 | 🎤 | Mic STT |
 | 🎙 | Continuous voice |
 | Textbox | Input (Enter send, Ctrl+Enter) |
-| Send | Start generation |
+| Send | Start generation · while busy **queues** follow-up (P1.4) |
 | Stop | Cancel loop |
 | Status line | mode · tasks · tool-appr · caps · attaches |
 
@@ -181,6 +181,17 @@ Chat chrome always uses explicit `UI` colors so text stays readable.
 | Reply | Soft thread (`parent_id` / `reply_to`) |
 
 Separate from **Team** goal channels (`data/team_channels/`).
+
+
+## Chat message queue (1.27.93)
+
+| Control | Role |
+|---------|------|
+| Send while busy | Enqueue follow-up (FIFO) instead of blocking |
+| Queue chips | Under composer — preview + × remove |
+| Clear queue | Drop all queued follow-ups |
+| Auto-send | On turn idle, dequeue next and send |
+| Stop | Cancels active run; **keeps** queue (clear explicitly) |
 
 ## Automations page (1.27.92)
 

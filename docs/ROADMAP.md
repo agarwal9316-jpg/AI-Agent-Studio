@@ -35,6 +35,7 @@
 - [x] Notes workspace + attach-to-chat full-context inject (1.27.90)  
 - [x] Channels (OWUI-inspired) — shared timeline + @model ask (1.27.91)  
 - [x] Automations — schedule prompts → linked chat (1.27.92)  
+- [x] Message queue while streaming (1.27.93)  
 - [ ] Filesystem sandbox profiles  
 - [ ] Virtualized long chat history  
 - [ ] Keep docs/ in sync on every release (process)  

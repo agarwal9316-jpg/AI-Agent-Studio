@@ -1,4 +1,4 @@
 """Application version — shown in status bar and About."""
 
-__version__ = "1.27.92"
+__version__ = "1.27.93"
 APP_NAME = "AI Agent Studio"

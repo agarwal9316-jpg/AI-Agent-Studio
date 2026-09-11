@@ -71,7 +71,7 @@ CHAT_CONTROLS: dict[str, dict[str, str]] = {
     "mic": {"label": "🎤 Mic", "help": "Speak instead of typing. Your voice is turned into text."},
     "speak": {"label": "🔊 Speak", "help": "Read the last assistant reply aloud (Settings → Voice)."},
     "send": {"label": "↑ Send", "help": "Send your message to the AI and start a reply. (Enter key does the same.)"},
-    "stop": {"label": "■ Stop", "help": "Ask the AI to stop what it is doing right now."},
+    "stop": {"label": "■ Stop", "help": "Stop the current reply. Queued follow-ups stay (Clear queue to drop them)."},
     "pause": {"label": "⏸ Pause", "help": "Pause a long run and continue from where it left off later."},
     "agent": {"label": "Agent…", "help": "Choose which AI persona answers in this chat."},
     "context": {"label": "Context…", "help": "Choose what the AI can see: which tools, files, and knowledge are active."},

@@ -12,6 +12,7 @@ from app.core.services.chat import hash_inject
 from app.core.services.chat import notes_store
 from app.core.services.chat import channels_store
 from app.core.services.chat import automations_store
+from app.core.services.chat import msg_queue
 
 # Expose commonly used functions from chat module
 from app.core.services.chat.chat import (
@@ -34,6 +35,7 @@ __all__ = [
     "notes_store",
     "channels_store",
     "automations_store",
+    "msg_queue",
     "load_chat",
     "save_chat",
     "clear_chat",

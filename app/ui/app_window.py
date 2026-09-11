@@ -5186,8 +5186,15 @@ class AppWindow(ctk.CTk):
             self._refresh_note_attach_chips()
         except Exception:  # noqa: BLE001
             pass
+        # P1.4 — queued follow-ups while streaming (chips under composer)
+        self._msg_queue_host = ctk.CTkFrame(composer_outer, fg_color="transparent")
+        self._msg_queue_host.pack(fill="x", padx=side_pad + 6, pady=(0, 0))
+        try:
+            self._refresh_msg_queue_chips()
+        except Exception:  # noqa: BLE001
+            pass
         tip = (
-            "Enter send · Shift+Enter newline · ＋ tools · right-click chats to pin/delete"
+            "Enter send · while busy → queue · Shift+Enter newline · ＋ tools"
             if self._is_simple_ui()
             else "Enter send · Shift+Enter newline · Ctrl+\\ focus · Ctrl+K · ＋ attach/search/image"
         )
@@ -7888,6 +7895,211 @@ class AppWindow(ctk.CTk):
                 **style_chrome_button(),
             ).pack(side="left", padx=(0, 4), pady=2)
 
+
+    def _active_chat_id_for_queue(self) -> str:
+        try:
+            from app.core.services.chat.chat_store import get_active_chat_id
+
+            return str(get_active_chat_id() or (self._chat_state or {}).get("id") or "default")
+        except Exception:  # noqa: BLE001
+            try:
+                return str((self._chat_state or {}).get("id") or "default")
+            except Exception:  # noqa: BLE001
+                return "default"
+
+    def _enqueue_composer_followup(
+        self,
+        *,
+        text: str,
+        attachments: list | None = None,
+        notes: list | None = None,
+        images: list | None = None,
+        videos: list | None = None,
+        source: str = "composer",
+    ) -> bool:
+        """Queue a follow-up while the current turn is busy (P1.4)."""
+        from app.core.services.chat import msg_queue as mq
+
+        cid = self._active_chat_id_for_queue()
+        imgs = list(images if images is not None else getattr(self, "_pending_images", None) or [])
+        vids = list(videos if videos is not None else getattr(self, "_pending_videos", None) or [])
+        item = mq.enqueue(
+            cid,
+            text or "",
+            attachments=list(attachments or []),
+            notes=list(notes or []),
+            images=imgs,
+            videos=vids,
+            source=source,
+        )
+        if item is None:
+            self.set_status("Could not queue (empty or queue full)", toast=True)
+            return False
+        # Clear composer + pending attach for this queued turn
+        try:
+            if hasattr(self, "chat_input"):
+                self.chat_input.delete("1.0", "end")
+            self._composer_is_placeholder = False
+            self._composer_maybe_placeholder()
+            self._chat_attachments = []
+            self._chat_attached_notes = []
+            self._pending_images = []
+            self._pending_videos = []
+            self._refresh_note_attach_chips()
+            self._refresh_attach_label()
+        except Exception:  # noqa: BLE001
+            pass
+        try:
+            self._refresh_msg_queue_chips()
+        except Exception:  # noqa: BLE001
+            pass
+        n = mq.count(cid)
+        label = mq.preview_label(item)
+        self.set_status(f"Queued ({n}): {label}", toast=True)
+        if hasattr(self, "chat_status"):
+            try:
+                self.chat_status.configure(text=f"Queued {n} follow-up(s) — sends when idle")
+            except Exception:  # noqa: BLE001
+                pass
+        return True
+
+    def _refresh_msg_queue_chips(self) -> None:
+        """Show / refresh queued follow-up chips under the composer (P1.4)."""
+        from app.core.services.chat import msg_queue as mq
+        from app.ui.themes import style_chrome_button, UI as _UI
+
+        host = getattr(self, "_msg_queue_host", None)
+        if host is None:
+            return
+        try:
+            if not host.winfo_exists():
+                return
+        except Exception:  # noqa: BLE001
+            return
+        for w in host.winfo_children():
+            try:
+                w.destroy()
+            except Exception:  # noqa: BLE001
+                pass
+        cid = self._active_chat_id_for_queue()
+        items = mq.list_queued(cid)
+        if not items:
+            return
+        ctk.CTkLabel(
+            host,
+            text=f"Queue ({len(items)}):",
+            text_color=_UI["muted"],
+            width=72,
+        ).pack(side="left", padx=(0, 4))
+        for it in items:
+            iid = str(it.get("id") or "")
+            label = mq.preview_label(it, max_len=36)
+            chip = ctk.CTkFrame(
+                host,
+                fg_color=_UI.get("top_bg", ("#e5e7eb", "#1f2937")),
+                corner_radius=12,
+            )
+            chip.pack(side="left", padx=2, pady=2)
+            ctk.CTkLabel(
+                chip,
+                text=f"⏳ {label}",
+                text_color=_UI["label"],
+            ).pack(side="left", padx=(8, 2), pady=2)
+            ctk.CTkButton(
+                chip,
+                text="×",
+                width=24,
+                height=22,
+                corner_radius=10,
+                command=lambda i=iid: self._msg_queue_remove_item(i),
+                **style_chrome_button(),
+            ).pack(side="left", padx=(0, 4), pady=2)
+        ctk.CTkButton(
+            host,
+            text="Clear queue",
+            width=90,
+            height=24,
+            corner_radius=8,
+            command=self._msg_queue_clear,
+            **style_chrome_button(),
+        ).pack(side="left", padx=(6, 0), pady=2)
+
+    def _msg_queue_remove_item(self, item_id: str) -> None:
+        from app.core.services.chat import msg_queue as mq
+
+        mq.remove(self._active_chat_id_for_queue(), item_id)
+        try:
+            self._refresh_msg_queue_chips()
+        except Exception:  # noqa: BLE001
+            pass
+        self.set_status("Removed from queue", toast=True)
+
+    def _msg_queue_clear(self) -> None:
+        from app.core.services.chat import msg_queue as mq
+
+        n = mq.clear(self._active_chat_id_for_queue())
+        try:
+            self._refresh_msg_queue_chips()
+        except Exception:  # noqa: BLE001
+            pass
+        self.set_status(f"Cleared queue ({n})", toast=True)
+
+    def _maybe_drain_msg_queue(self) -> None:
+        """When idle, dequeue FIFO and auto-send next follow-up (P1.4)."""
+        if bool(getattr(self, "_chat_busy", False)):
+            return
+        if bool(getattr(self, "_msg_queue_draining", False)):
+            return
+        from app.core.services.chat import msg_queue as mq
+
+        cid = self._active_chat_id_for_queue()
+        if mq.count(cid) <= 0:
+            return
+        item = mq.dequeue(cid)
+        try:
+            self._refresh_msg_queue_chips()
+        except Exception:  # noqa: BLE001
+            pass
+        if not item:
+            return
+        self._msg_queue_draining = True
+
+        def _send_next() -> None:
+            try:
+                # Restore pending attachments/notes for this queued turn
+                self._chat_attachments = list(item.get("attachments") or [])
+                self._chat_attached_notes = list(item.get("notes") or [])
+                self._pending_images = list(item.get("images") or [])
+                self._pending_videos = list(item.get("videos") or [])
+                try:
+                    self._refresh_note_attach_chips()
+                    self._refresh_attach_label()
+                except Exception:  # noqa: BLE001
+                    pass
+                body = str(item.get("text") or "")
+                if hasattr(self, "chat_input"):
+                    self._composer_is_placeholder = False
+                    self.chat_input.delete("1.0", "end")
+                    if body:
+                        self.chat_input.insert("1.0", body)
+                self.set_status(
+                    f"Sending queued: {mq.preview_label(item)}",
+                    toast=True,
+                )
+                self._chat_send()
+            finally:
+                self._msg_queue_draining = False
+
+        try:
+            # Short delay so finish() UI settles before next turn
+            self.after(120, _send_next)
+        except Exception:  # noqa: BLE001
+            self._msg_queue_draining = False
+            try:
+                _send_next()
+            except Exception:  # noqa: BLE001
+                pass
+
     def _chat_attach_image(self) -> None:
         paths = filedialog.askopenfilenames(
             title="Attach images",
@@ -9825,6 +10037,10 @@ class AppWindow(ctk.CTk):
                     f"Compare done · {ok_n}/{len(cleaned)} models replied (text-only)",
                     toast=True,
                 )
+                try:
+                    self._maybe_drain_msg_queue()
+                except Exception:  # noqa: BLE001
+                    pass
 
             self._ui_call(finish)
 
@@ -14309,7 +14525,11 @@ class AppWindow(ctk.CTk):
         self.set_status(f"Chat {reason} — send is available again", toast=True)
 
     def _chat_stop(self) -> None:
-        """Stop LLM thinking / tool loop for the current send (+ kill terminal)."""
+        """Stop LLM thinking / tool loop for the current send (+ kill terminal).
+
+        P1.4: Stop cancels the active run but **keeps** the message queue
+        (user clears via chip × / Clear queue). When idle, next item auto-sends.
+        """
         import time as _time
 
         # Not busy → still allow force-unlock if buttons look stuck
@@ -14331,6 +14551,10 @@ class AppWindow(ctk.CTk):
         self._chat_stop_click_ts = now
         if last and (now - last) < 2.0:
             self._chat_force_unlock(reason="force-stopped")
+            try:
+                self._maybe_drain_msg_queue()
+            except Exception:  # noqa: BLE001
+                pass
             return
 
         self._chat_cancel = True
@@ -14364,6 +14588,11 @@ class AppWindow(ctk.CTk):
         def _auto_unlock() -> None:
             if bool(getattr(self, "_chat_busy", False)):
                 self._chat_force_unlock(reason="auto-unlocked after Stop")
+                # Queue kept on Stop — drain when idle (P1.4)
+                try:
+                    self._maybe_drain_msg_queue()
+                except Exception:  # noqa: BLE001
+                    pass
 
         try:
             self.after(1500, _auto_unlock)
@@ -15080,26 +15309,6 @@ class AppWindow(ctk.CTk):
     def _chat_send(self) -> None:
         import time as _time
 
-        if self._chat_busy:
-            # If stuck busy > 45s with no progress, auto-unlock on next Send click
-            started = float(getattr(self, "_chat_busy_started", 0) or 0)
-            stuck = started > 0 and (_time.monotonic() - started) > 45.0
-            if stuck:
-                self._chat_force_unlock(reason="auto-cleared stuck busy")
-                # fall through and send
-            else:
-                try:
-                    if hasattr(self, "chat_status"):
-                        self.chat_status.configure(
-                            text="Still working… ■ Stop once, or twice to force unlock"
-                        )
-                    self.set_status(
-                        "Chat is busy — press ■ Stop (twice if stuck), then send.",
-                        toast=True,
-                    )
-                except Exception:  # noqa: BLE001
-                    pass
-                return
         if not hasattr(self, "chat_input"):
             return
         # Don't send the Grok-style placeholder as a message
@@ -15111,10 +15320,11 @@ class AppWindow(ctk.CTk):
         attachments = list(self._chat_attachments)
         attached_notes = list(getattr(self, "_chat_attached_notes", None) or [])
         if not text and not attachments and not attached_notes:
-            self.chat_status.configure(text="Empty message")
+            if hasattr(self, "chat_status"):
+                self.chat_status.configure(text="Empty message")
             return
 
-        # Slash commands (do not hit LLM when fully handled)
+        # Slash commands first (e.g. /stop while busy) — do not enqueue these
         if text.startswith("/") and self._try_handle_slash_command(text):
             self.chat_input.delete("1.0", "end")
             self._composer_is_placeholder = False
@@ -15125,6 +15335,22 @@ class AppWindow(ctk.CTk):
         text = self.chat_input.get("1.0", "end").strip()
         if getattr(self, "_composer_is_placeholder", False):
             text = ""
+
+        # P1.4: while generating/streaming/tools — enqueue follow-up (FIFO)
+        if self._chat_busy and not getattr(self, "_msg_queue_draining", False):
+            started = float(getattr(self, "_chat_busy_started", 0) or 0)
+            stuck = started > 0 and (_time.monotonic() - started) > 45.0
+            if stuck:
+                self._chat_force_unlock(reason="auto-cleared stuck busy")
+                # fall through and send
+            else:
+                self._enqueue_composer_followup(
+                    text=text,
+                    attachments=attachments,
+                    notes=attached_notes,
+                    source="composer",
+                )
+                return
 
         try:
             from app.core.services.chat.task_watch import is_auto_continue_text
@@ -15138,7 +15364,12 @@ class AppWindow(ctk.CTk):
         self._chat_busy_started = _time.monotonic()
         self._chat_cancel = False
         self._chat_paused = False
-        self.chat_send_btn.configure(state="disabled", text="…")
+        # Keep Send enabled so follow-ups can enqueue while streaming (P1.4)
+        try:
+            self.chat_send_btn.configure(state="normal", text="↑")
+            self._tooltip(self.chat_send_btn, "Send queues while busy · Enter")
+        except Exception:  # noqa: BLE001
+            pass
         if hasattr(self, "chat_stop_btn"):
             self.chat_stop_btn.configure(
                 state="normal",
@@ -15282,8 +15513,15 @@ class AppWindow(ctk.CTk):
             )
         except Exception:  # noqa: BLE001
             pass
+        # Capture note ids for worker before clearing chips
+        note_ids_for_send = list(attached_notes)
         # Clear pending attachments after queueing send
         self._chat_attachments = []
+        try:
+            self._chat_attached_notes = []
+            self._refresh_note_attach_chips()
+        except Exception:  # noqa: BLE001
+            pass
         if hasattr(self, "chat_attach_label"):
             n_skills = len(discover_skills())
             self.chat_attach_label.configure(
@@ -15797,10 +16035,22 @@ class AppWindow(ctk.CTk):
                     pass
                 try:
                     self._refresh_task_llm_chips()
-                    if bool(getattr(self, "_task_cycle_running", False)):
-                        self.after(1800, self._maybe_auto_continue_task)
                 except Exception:  # noqa: BLE001
                     pass
+                # P1.4: drain FIFO queue first; else task-cycle auto-continue
+                try:
+                    from app.core.services.chat import msg_queue as _mq
+
+                    if _mq.count(self._active_chat_id_for_queue()) > 0:
+                        self._maybe_drain_msg_queue()
+                    elif bool(getattr(self, "_task_cycle_running", False)):
+                        self.after(1800, self._maybe_auto_continue_task)
+                except Exception:  # noqa: BLE001
+                    try:
+                        if bool(getattr(self, "_task_cycle_running", False)):
+                            self.after(1800, self._maybe_auto_continue_task)
+                    except Exception:  # noqa: BLE001
+                        pass
 
             # Always hop to main thread via queue (never after() from worker)
             try:
@@ -16038,7 +16288,8 @@ class AppWindow(ctk.CTk):
                 if not self._chat_busy:
                     self._chat_send()
                 else:
-                    self.set_status(f"Voice (queued): {text[:50]}")
+                    # P1.4 — real FIFO queue (not just status toast)
+                    self._enqueue_composer_followup(text=text, source="voice")
 
             try:
                 self.after(0, ui)
