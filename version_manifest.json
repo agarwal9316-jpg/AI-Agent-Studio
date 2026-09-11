@@ -1,7 +1,7 @@
 {
   "name": "AI Agent Studio",
-  "version": "1.28.2",
-  "notes": "Optional icons / branding pack \u2014 assets/branding (PNG/SVG/ICO), window/About/Home soft-degrade; docs/BRANDING.md",
+  "version": "1.28.3",
+  "notes": "Plugins / Connectors \u2014 MCP servers + OpenAPI tool endpoints UI + registry (data/plugins.json); discover tools; native tool_calls / harness; soft-degrade",
   "download_url": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/latest",
   "source": "github"
 }

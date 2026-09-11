@@ -61,6 +61,11 @@ from app.core.services.llm.llm import (
 )
 from app.core.services.integrations.mcp_client import extract_mcp_requests, get_mcp_hub
 from app.core.services.integrations.mcp_marketplace import marketplace_prompt
+from app.core.services.integrations.openapi_tools import (
+    call_qualified as openapi_call_qualified,
+    extract_openapi_requests,
+)
+from app.core.services.integrations.plugins_registry import catalog_prompt as plugins_catalog_prompt
 from app.core.services.chat.media_chat import enrich_message_with_media, media_tool_instructions, stage_media_file
 from app.core.services.company.org_tools import extract_org_commands, org_tool_instructions, run_org_command
 from app.core.services.misc.package_auto import extract_pip_commands, pip_tool_instructions, run_pip_command
@@ -836,6 +841,8 @@ def send_user_message(
         + laptop_part
         + "\n\n"
         + marketplace_prompt()
+        + "\n\n"
+        + plugins_catalog_prompt()
         + ("\n\n" + workflow_part if workflow_part else "")
         + "\n\n"
         + org_tool_instructions()
@@ -926,6 +933,8 @@ def send_user_message(
                     t
                     for t in openai_tools
                     if (t.get("function") or {}).get("name") != "mcp"
+                    and (t.get("function") or {}).get("name") != "openapi"
+                    and not str((t.get("function") or {}).get("name") or "").startswith("oa__")
                 ]
             if openai_tools:
                 full_system = full_system + "\n\n" + dual_path_tool_hint()
@@ -2361,6 +2370,30 @@ def send_user_message(
                         args_summary=f"{qual} {args}"[:800],
                         result=result if isinstance(result, dict) else {"preview": str(result)[:400]},
                         status="ok",
+                    )
+
+            if exec_mcp:
+                for qual, args in extract_openapi_requests(reply):
+                    used_tool = True
+                    if not allow_tool("mcp", f"OpenAPI {qual}", str(args)):
+                        continue
+                    emit(f"OpenAPI: {qual}")
+                    try:
+                        result = openapi_call_qualified(qual, args)
+                    except Exception as e:  # noqa: BLE001
+                        result = {"ok": False, "error": str(e), "soft_degrade": True}
+                    hist.append(
+                        {
+                            "role": "openapi",
+                            "content": f"### OpenAPI result `{qual}`\n```json\n{result}\n```",
+                            "at": _now(),
+                        }
+                    )
+                    _audit_tool(
+                        "openapi",
+                        args_summary=f"{qual} {args}"[:800],
+                        result=result if isinstance(result, dict) else {"preview": str(result)[:400]},
+                        status="ok" if result.get("ok") else "error",
                     )
 
             # In plan mode, log terminal commands for visibility but don't execute them

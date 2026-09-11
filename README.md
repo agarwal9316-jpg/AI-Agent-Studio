@@ -4,7 +4,7 @@ Portable **Windows GUI** for multi-agent chat, company workflows, tools, and loc
 
 Inspired by AutoGen / CrewAI / Dify / Langflow for **patterns only** — original software, **not a clone**.
 
-**Version:** 1.28.2 (see `app/version.py` · [docs/CHANGELOG.md](docs/CHANGELOG.md)) · [GitHub Releases](https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases)  
+**Version:** 1.28.3 (see `app/version.py` · [docs/CHANGELOG.md](docs/CHANGELOG.md)) · [GitHub Releases](https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases)  
 
 
 ---

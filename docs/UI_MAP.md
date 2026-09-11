@@ -1,7 +1,7 @@
 # UI Map
 
 **Toolkit:** CustomTkinter  
-**Version:** 1.28.0 (keep in sync with `app/version.py`)
+**Version:** 1.28.3 (keep in sync with `app/version.py`)
 
 ---
 
@@ -17,7 +17,7 @@
 
 ### Sidebar pages (typical order)
 
-Chat · Home · Agents · Tasks · Runs · Chats · Memory · Projects · Company · CEO · Workflow · Knowledge · Notes · Channels · Automations · Approvals · Patches · Schedule · Usage · Settings · About  
+Chat · Home · Agents · Tasks · Runs · Chats · Memory · Projects · Company · CEO · Workflow · Knowledge · Notes · Channels · Automations · **Plugins** · Approvals · Patches · Schedule · Usage · Settings · About  
 
 *(Exact labels come from `app_window` nav construction.)*
 

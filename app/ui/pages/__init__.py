@@ -5,6 +5,7 @@ from app.ui.pages import models_page
 from app.ui.pages import monitor_page
 from app.ui.pages import notes_page
 from app.ui.pages import channels_page
+from app.ui.pages import plugins_page
 from app.ui.pages import flow_canvas_view
 from app.ui.pages import org_chart_view
 from app.ui.pages import org_page
@@ -17,6 +18,7 @@ __all__ = [
     "monitor_page",
     "notes_page",
     "channels_page",
+    "plugins_page",
     "flow_canvas_view",
     "org_chart_view",
     "org_page",

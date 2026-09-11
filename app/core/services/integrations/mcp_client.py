@@ -40,6 +40,30 @@ def load_mcp_config(extra_paths: list[str | Path] | None = None) -> dict[str, An
     for ep in extra_paths or []:
         paths.insert(0, Path(ep))
 
+    # Also merge enabled MCP entries from data/plugins.json (Plugins UI)
+    try:
+        from app.core.services.integrations import plugins_registry as _pr
+
+        for item in _pr.list_mcp_servers():
+            if not item.get("enabled"):
+                continue
+            name = str(item.get("name") or item.get("id") or "").strip()
+            if not name:
+                continue
+            cfg: dict[str, Any] = {}
+            if item.get("command"):
+                cfg["command"] = item["command"]
+                cfg["args"] = list(item.get("args") or [])
+                cfg["env"] = dict(item.get("env") or {})
+            if item.get("url"):
+                cfg["url"] = item["url"]
+            if cfg.get("command") or cfg.get("url"):
+                cfg["_config_path"] = "data/plugins.json"
+                cfg["_plugin_id"] = item.get("id")
+                servers[name] = cfg
+    except Exception:  # noqa: BLE001
+        pass
+
     for p in paths:
         p = Path(p)
         if not p.is_file():

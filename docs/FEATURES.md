@@ -1,11 +1,12 @@
 # Feature inventory
 
-**Version:** 1.28.2  
+**Version:** 1.28.3  
 **Maintained here** (root `FEATURES.md` is a pointer).  
 **History:** [CHANGELOG.md](CHANGELOG.md) · resume [CONTINUITY.md](CONTINUITY.md)
 
 | Feature | Status | Where |
 |---------|--------|--------|
+| **Plugins / Connectors (MCP + OpenAPI)** | Yes | Workspace **Plugins** · `data/plugins.json` · add/edit/enable/test · OpenAPI GET/POST import · native tools + `<<<OPENAPI>>>` · soft-degrade · 1.28.3 |
 | **Branding pack (optional icons)** | Yes | `assets/branding/` · window/About/Home · soft-degrade · `docs/BRANDING.md` · 1.28.2 |
 | **Code signing (portable EXE)** | Yes | `scripts/sign_portable.ps1` / `.sh` · `docs/CODE_SIGNING.md` · user-provided cert · self-signed DEV only · 1.28.1 |
 | **Richer flow canvas** | Yes | Org chart → **Flow canvas** · nodes+edges · pan/zoom/drag/link · save with `workflow_graph` · `flow_canvas` · soft-degrade · 1.28.0 |

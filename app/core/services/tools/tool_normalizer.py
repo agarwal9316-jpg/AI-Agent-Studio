@@ -88,6 +88,7 @@ _SIMPLE_KEY_MAP: dict[str, tuple[str, str]] = {
     "dall_e_3": ("IMAGE_GEN", None),
     # MCP
     "mcp": ("MCP", None),
+    "openapi": ("OPENAPI", None),
     # screenshot / GUI
     "screenshot": ("SCREENSHOT", None),
     "take_screenshot": ("SCREENSHOT", None),

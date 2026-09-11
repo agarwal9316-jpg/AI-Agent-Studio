@@ -161,6 +161,7 @@ NAV_ICONS: dict[str, str] = {
     "Notes": "✎",
     "Channels": "💬",
     "Automations": "⏰",
+    "Plugins": "🔌",
     "Schedule": "◷",
     "Org chart": "⎇",
     "Memory": "◉",

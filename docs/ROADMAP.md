@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current:** v1.28.2 — Cockpit + Models/Train lab + Mission Control + Team multi-AI + Flow canvas + code-sign + branding pack.
+**Current:** v1.28.3 — Plugins/Connectors (MCP + OpenAPI) + cockpit + Models/Train + Mission Control + Team + Flow canvas + branding.
 
 ---
 
@@ -45,8 +45,13 @@
 - [x] Richer flow canvas (beyond workflow tree) (1.28.0)  
 - [x] Code signing for portable exe (1.28.1) — pipeline ready; cert is user-provided  
 - [x] Optional icons / branding pack (1.28.2) — `assets/branding/` + loader; soft-degrade  
+- [x] Plugins / Connectors — MCP + OpenAPI tools UI + registry (1.28.3)  
 
 ---
+
+## Next
+
+- [ ] Next-10 remaining items (analytics deferred)
 
 ## Later
 

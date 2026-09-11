@@ -27,6 +27,7 @@ It is **not** the Grok Build TUI process. Some Grok *host* tools cannot run here
 | Plan vs Action mode | YES | Mode selector in Chat |
 | Per-skill on/off | YES | Skills manager |
 | MCP marketplace catalog | YES | Marketplace button (install recipes → mcp.json) |
+| Plugins / Connectors (MCP + OpenAPI) | YES | Workspace **Plugins** · `data/plugins.json` · GET/POST OpenAPI |
 | Subagents / spawn_subagent | YES (Studio harness) | `<<<SPAWN_SUBAGENT>>>` types: general-purpose, explore, plan |
 | Workflows (.rhai) | Partial | Company workflow tree + scheduler; not Grok .rhai (run via terminal if needed) |
 | File tools (read/write/patch/grep) | YES | `<<<READ_FILE>>>` `<<<WRITE_FILE>>>` `<<<SEARCH_REPLACE>>>` `<<<GREP>>>` `<<<LIST_DIR>>>` |

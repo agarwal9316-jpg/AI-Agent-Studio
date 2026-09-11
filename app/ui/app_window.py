@@ -91,6 +91,7 @@ from app.ui import mgmt_pages
 from app.ui.pages import notes_page
 from app.ui.pages import channels_page
 from app.ui.pages import automations_page
+from app.ui.pages import plugins_page
 from app.version import APP_NAME, __version__
 
 NAV_ITEMS = (
@@ -109,6 +110,7 @@ NAV_ITEMS = (
     "Notes",
     "Channels",
     "Automations",
+    "Plugins",
     "Schedule",
     "Org chart",
     "Memory",
@@ -1125,7 +1127,7 @@ class AppWindow(ctk.CTk):
             ]
         return [
             ("PRIMARY", ("Home", "Chat", "Team", "Models", "Monitor", "Help")),
-            ("WORKSPACE", ("Work", "Approvals", "Knowledge", "Notes", "Channels", "Automations", "Org chart")),
+            ("WORKSPACE", ("Work", "Approvals", "Knowledge", "Notes", "Channels", "Automations", "Plugins", "Org chart")),
             (
                 "MORE",
                 (
@@ -2966,6 +2968,7 @@ class AppWindow(ctk.CTk):
             "Notes": lambda: notes_page.page_notes(self),
             "Channels": lambda: channels_page.page_channels(self),
             "Automations": lambda: automations_page.page_automations(self),
+            "Plugins": lambda: plugins_page.page_plugins(self),
             "Schedule": self._page_schedule,
             "Memory": lambda: mgmt_pages.page_memory(self),
             "Projects": lambda: mgmt_pages.page_projects(self),

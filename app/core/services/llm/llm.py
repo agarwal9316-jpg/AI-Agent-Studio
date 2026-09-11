@@ -254,6 +254,7 @@ _TOOL_NAME_MAP = {
     "dall_e_3": ("IMAGE_GEN", {"size": "", "prompt": ""}),
     # MCP
     "mcp": ("MCP", {"server": "server", "tool_name": "tool_name", "arguments": "arguments"}),
+    "openapi": ("OPENAPI", {"server": "server", "tool_name": "tool_name", "arguments": "arguments"}),
     # Screenshot / GUI / Clipboard
     "screenshot": ("SCREENSHOT", {"name": ""}),
     "gui": ("GUI", {"actions": ""}),
@@ -286,7 +287,7 @@ _TOOL_NAME_MAP = {
 _KNOWN_BLOCKS = {
     "TERMINAL", "WEB_SEARCH", "READ_FILE", "WRITE_FILE", "SEARCH_REPLACE",
     "LIST_DIR", "GREP", "GIT_STATUS", "GIT_DIFF", "GIT_COMMIT",
-    "BROWSER", "IMAGE_GEN", "MCP", "SCREENSHOT", "GUI", "CLIPBOARD",
+    "BROWSER", "IMAGE_GEN", "MCP", "OPENAPI", "SCREENSHOT", "GUI", "CLIPBOARD",
     "WINDOWS", "KNOWLEDGE", "OCR", "SKILL", "WEB_FETCH", "DEEP_RESEARCH",
     "CRAWL", "SCRAPE", "DOWNLOAD", "PATCH_REVIEW", "SELF_IMPROVE",
     "BACKUP", "ROLLBACK", "IMAGE", "VIDEO", "ORG_COMMAND", "PIP_INSTALL",
@@ -301,6 +302,37 @@ def _json_to_text_block(func_name: str, arguments_str: str) -> str | None:
     Convert a single OpenAI tool_call (func_name + JSON args) to text block format.
     Returns the text block string, or None if conversion failed.
     """
+    # 0) Dynamic OpenAPI per-op tools: oa__Server__tool
+    if func_name.startswith("oa__"):
+        try:
+            from app.core.services.integrations.openapi_tools import parse_oa_function_name
+
+            parsed = parse_oa_function_name(func_name)
+        except Exception:  # noqa: BLE001
+            parsed = None
+        if parsed:
+            server_approx, tool = parsed
+            try:
+                args = json.loads(arguments_str) if arguments_str else {}
+            except (json.JSONDecodeError, TypeError):
+                args = {}
+            if not isinstance(args, dict):
+                args = {"value": args}
+            # Resolve server name from plugins (safe_name match)
+            try:
+                from app.core.services.integrations import plugins_registry as _pr
+                from app.core.services.integrations.openapi_tools import _safe_tool_name
+
+                server_name = server_approx
+                for s in _pr.list_openapi_servers():
+                    if _safe_tool_name(s.get("name") or "") == server_approx or s.get("id") == server_approx:
+                        server_name = s["name"]
+                        break
+            except Exception:  # noqa: BLE001
+                server_name = server_approx
+            body = server_name + "." + tool + "\n" + json.dumps(args)
+            return f"<<<OPENAPI>>>\n{body}\n<<<END_OPENAPI>>>"
+
     # 1) Look up known mapping
     entry = _TOOL_NAME_MAP.get(func_name.lower())
     if entry:
@@ -346,6 +378,23 @@ def _build_text_block(block_name: str, args: dict[str, Any], key_map: dict[str, 
             only = next(iter(args.values()))
             if str(only).strip():
                 return f"<<<TERMINAL>>>\n{str(only).strip()}\n<<<END_TERMINAL>>>"
+
+    # MCP / OPENAPI: server.tool + JSON args (matches extract_*_requests)
+    if block_name in ("MCP", "OPENAPI"):
+        server = str(args.get("server") or "").strip()
+        tool = str(args.get("tool_name") or args.get("tool") or args.get("name") or "").strip()
+        call_args = args.get("arguments")
+        if call_args is None:
+            call_args = {
+                k: v
+                for k, v in args.items()
+                if k not in ("server", "tool_name", "tool", "name")
+            }
+        if not isinstance(call_args, dict):
+            call_args = {"value": call_args}
+        qual = f"{server}.{tool}" if server and tool else (server or tool or "unknown")
+        body = qual + "\n" + json.dumps(call_args)
+        return f"<<<{block_name}>>>\n{body}\n<<<END_{block_name}>>>"
 
     # WEB_SEARCH: raw query when only query-like keys present
     if block_name == "WEB_SEARCH":

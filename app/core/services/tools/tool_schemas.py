@@ -256,6 +256,14 @@ def studio_openai_tools(*, include_harness: bool = True) -> list[dict[str, Any]]
             ]
         )
 
+    # OpenAPI connectors (Plugins) — soft-degrade if registry unavailable
+    try:
+        from app.core.services.integrations.openapi_tools import openai_tool_schemas
+
+        tools.extend(openai_tool_schemas())
+    except Exception:  # noqa: BLE001
+        pass
+
     return tools
 
 
