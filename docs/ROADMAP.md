@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current:** v1.27.98 — Cockpit + Models/Train lab + Mission Control + Team multi-AI.
+**Current:** v1.27.99 — Cockpit + Models/Train lab + Mission Control + Team multi-AI.
 
 ---
 
@@ -41,6 +41,7 @@
 - [x] Filesystem sandbox profiles (1.27.96)  
 - [x] Virtualized long chat history (1.27.97)  
 - [x] Keep docs/ in sync on every release (process) (1.27.98)  
+- [x] Export/import full studio bundle (data zip) (1.27.99)  
 
 ---
 
@@ -49,7 +50,6 @@
 - [ ] Richer flow canvas (if needed beyond workflow tree)  
 - [ ] Code signing for portable exe  
 - [ ] Optional icons / branding pack  
-- [ ] Export/import full studio bundle (data zip)  
 
 ---
 

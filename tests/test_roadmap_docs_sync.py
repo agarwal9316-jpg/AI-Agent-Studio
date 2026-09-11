@@ -18,8 +18,10 @@ from scripts.check_docs_sync import check_docs_sync  # noqa: E402
 
 
 def test_version():
-    assert __version__ == "1.27.98", __version__
-    print("✓ version 1.27.98")
+    # Durable: matches VERSION file (docs-sync process continues across releases)
+    file_ver = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+    assert __version__ == file_ver, (__version__, file_ver)
+    print(f"✓ version {__version__} matches VERSION")
 
 
 def test_checker_module_passes_on_tree():

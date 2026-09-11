@@ -231,3 +231,10 @@ Live side panel → **Artifacts** segmented **This turn | Saved**.
 - **Custom roots** comma-separated extra allow paths
 - Chat **risk tier** chip maps onto profile (read_only → Read-only workspace, ask → Project-only, full → Full disk with ask)
 
+### Studio bundle (1.27.99)
+
+- **Settings** sticky save bar + **Studio bundle (backup / restore)** section: Export / Import studio bundle
+- **About** → Studio bundle card: same actions
+- File dialogs; optional include-secrets on export; merge vs replace on import
+- Service: `app.core.services.misc.studio_bundle`
+

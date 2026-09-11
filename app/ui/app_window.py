@@ -18217,6 +18217,20 @@ class AppWindow(ctk.CTk):
             text_color=_HC_MUTED,
         )
         save_status.pack(side="left", padx=12, pady=10)
+        ctk.CTkButton(
+            save_bar,
+            text="Export studio bundle",
+            width=160,
+            command=self._export_studio_bundle_dialog,
+            **style_chrome_button(),
+        ).pack(side="right", padx=6, pady=6)
+        ctk.CTkButton(
+            save_bar,
+            text="Import studio bundle",
+            width=160,
+            command=self._import_studio_bundle_dialog,
+            **style_chrome_button(),
+        ).pack(side="right", padx=6, pady=6)
 
         # Scrollable body — fixes “no save button” when content was cut off
         frame = ctk.CTkScrollableFrame(outer, fg_color="transparent")
@@ -18421,15 +18435,52 @@ class AppWindow(ctk.CTk):
         except Exception:  # noqa: BLE001
             pass
 
+        # Studio bundle — portable data zip
+        ctk.CTkLabel(
+            frame,
+            text="Studio bundle (backup / restore)",
+            font=ctk.CTkFont(size=14, weight="bold"),
+            text_color=_HC_LABEL,
+        ).grid(row=2, column=0, sticky="w", pady=(8, 2))
+        bundle_box = ctk.CTkFrame(frame)
+        bundle_box.grid(row=3, column=0, sticky="ew", pady=4)
+        ctk.CTkLabel(
+            bundle_box,
+            text=(
+                "Export a portable .zip of settings/config (keys redacted by default), "
+                "knowledge, notes, channels, automations, chats metadata, and artifacts index."
+            ),
+            text_color=_HC_MUTED,
+            wraplength=720,
+            justify="left",
+            anchor="w",
+        ).pack(anchor="w", padx=10, pady=(8, 4))
+        bb = ctk.CTkFrame(bundle_box, fg_color="transparent")
+        bb.pack(fill="x", padx=10, pady=(0, 10))
+        ctk.CTkButton(
+            bb,
+            text="Export studio bundle",
+            width=170,
+            command=self._export_studio_bundle_dialog,
+            **style_chrome_button(),
+        ).pack(side="left", padx=4)
+        ctk.CTkButton(
+            bb,
+            text="Import studio bundle",
+            width=170,
+            command=self._import_studio_bundle_dialog,
+            **style_chrome_button(),
+        ).pack(side="left", padx=4)
+
         # Section: Appearance
         ctk.CTkLabel(
             frame,
             text="Appearance",
             font=ctk.CTkFont(size=14, weight="bold"),
             text_color=_HC_LABEL,
-        ).grid(row=2, column=0, sticky="w", pady=(8, 2))
+        ).grid(row=4, column=0, sticky="w", pady=(8, 2))
         top = ctk.CTkFrame(frame)
-        top.grid(row=3, column=0, sticky="ew", pady=4)
+        top.grid(row=5, column=0, sticky="ew", pady=4)
         from app.ui.themes import theme_names
 
         ctk.CTkLabel(top, text="UI colour theme", text_color=_HC_LABEL).pack(side="left", padx=8)
@@ -18455,9 +18506,9 @@ class AppWindow(ctk.CTk):
             text="Chat & safety",
             font=ctk.CTkFont(size=14, weight="bold"),
             text_color=_HC_LABEL,
-        ).grid(row=4, column=0, sticky="w", pady=(8, 2))
+        ).grid(row=6, column=0, sticky="w", pady=(8, 2))
         opts = ctk.CTkFrame(frame)
-        opts.grid(row=5, column=0, sticky="ew", pady=6)
+        opts.grid(row=7, column=0, sticky="ew", pady=6)
         cfg = self.cfg
         stream_var = ctk.BooleanVar(master=opts, value=bool(cfg.get("stream_replies", True)))
         auto_proj_var = ctk.BooleanVar(master=opts, value=bool(cfg.get("auto_save_results_to_project")))
@@ -18640,9 +18691,9 @@ class AppWindow(ctk.CTk):
                 text="Voice (mic in / read-aloud out)",
                 font=ctk.CTkFont(size=14, weight="bold"),
                 text_color=_HC_LABEL,
-            ).grid(row=6, column=0, sticky="w", pady=(8, 2))
+            ).grid(row=8, column=0, sticky="w", pady=(8, 2))
             voice_box = ctk.CTkFrame(frame)
-            voice_box.grid(row=7, column=0, sticky="ew", pady=6)
+            voice_box.grid(row=9, column=0, sticky="ew", pady=6)
             voice_mic_var = ctk.BooleanVar(master=voice_box, value=bool(cfg.get("voice_mic_enabled", True)))
             voice_tts_var = ctk.BooleanVar(master=voice_box, value=bool(cfg.get("voice_tts_enabled", True)))
             voice_auto_var = ctk.BooleanVar(master=voice_box, value=bool(cfg.get("voice_auto_read_aloud", False)))
@@ -18825,7 +18876,7 @@ class AppWindow(ctk.CTk):
                     text="Voice (mic in / read-aloud out)",
                     font=ctk.CTkFont(size=14, weight="bold"),
                     text_color=_HC_LABEL,
-                ).grid(row=6, column=0, sticky="w", pady=(8, 2))
+                ).grid(row=8, column=0, sticky="w", pady=(8, 2))
                 ctk.CTkLabel(
                     frame,
                     text=f"Voice settings unavailable: {_voice_ui_err}",
@@ -18842,9 +18893,9 @@ class AppWindow(ctk.CTk):
             text="Image generation",
             font=ctk.CTkFont(size=14, weight="bold"),
             text_color=_HC_LABEL,
-        ).grid(row=8, column=0, sticky="w", pady=(8, 2))
+        ).grid(row=10, column=0, sticky="w", pady=(8, 2))
         img_row = ctk.CTkFrame(frame)
-        img_row.grid(row=9, column=0, sticky="ew", pady=6)
+        img_row.grid(row=11, column=0, sticky="ew", pady=6)
         ctk.CTkLabel(img_row, text="Image preset", text_color=_HC_LABEL).pack(side="left", padx=8)
         ctk.CTkOptionMenu(
             img_row,
@@ -18889,9 +18940,9 @@ class AppWindow(ctk.CTk):
             text="Web search (internet research)",
             font=ctk.CTkFont(size=14, weight="bold"),
             text_color=_HC_LABEL,
-        ).grid(row=10, column=0, sticky="w", pady=(10, 2))
+        ).grid(row=12, column=0, sticky="w", pady=(10, 2))
         search_box = ctk.CTkFrame(frame)
-        search_box.grid(row=11, column=0, sticky="ew", pady=4)
+        search_box.grid(row=13, column=0, sticky="ew", pady=4)
         search_box.grid_columnconfigure(1, weight=1)
 
         ctk.CTkLabel(
@@ -19125,9 +19176,9 @@ class AppWindow(ctk.CTk):
             text="Browser (full internet / live Chromium)",
             font=ctk.CTkFont(size=14, weight="bold"),
             text_color=_HC_LABEL,
-        ).grid(row=9, column=0, sticky="w", pady=(12, 2))
+        ).grid(row=11, column=0, sticky="w", pady=(12, 2))
         br_box = ctk.CTkFrame(frame)
-        br_box.grid(row=10, column=0, sticky="ew", pady=4)
+        br_box.grid(row=12, column=0, sticky="ew", pady=4)
         ctk.CTkLabel(
             br_box,
             text="Persistent session keeps cookies so multi-step browsing works. "
@@ -19149,9 +19200,9 @@ class AppWindow(ctk.CTk):
             text="Agent harness (Grok-style tools)",
             font=ctk.CTkFont(size=14, weight="bold"),
             text_color=_HC_LABEL,
-        ).grid(row=11, column=0, sticky="w", pady=(12, 2))
+        ).grid(row=13, column=0, sticky="w", pady=(12, 2))
         ah_box = ctk.CTkFrame(frame)
-        ah_box.grid(row=12, column=0, sticky="ew", pady=4)
+        ah_box.grid(row=14, column=0, sticky="ew", pady=4)
         harness_on_var = ctk.BooleanVar(master=ah_box, value=bool(cfg.get("agent_harness_enabled", True)))
         sandbox_on_var = ctk.BooleanVar(master=ah_box, value=bool(cfg.get("agent_sandbox_enabled", False)))
         hooks_on_var = ctk.BooleanVar(master=ah_box, value=bool(cfg.get("agent_hooks_enabled", True)))
@@ -19323,9 +19374,9 @@ class AppWindow(ctk.CTk):
             text="Deep research & crawl limits",
             font=ctk.CTkFont(size=14, weight="bold"),
             text_color=_HC_LABEL,
-        ).grid(row=13, column=0, sticky="w", pady=(12, 2))
+        ).grid(row=15, column=0, sticky="w", pady=(12, 2))
         res_box = ctk.CTkFrame(frame)
-        res_box.grid(row=14, column=0, sticky="ew", pady=4)
+        res_box.grid(row=16, column=0, sticky="ew", pady=4)
         ctk.CTkLabel(
             res_box,
             text="Caps runaway crawls. Model uses DEEP_RESEARCH / WEB_CRAWL / WEB_SCRAPE / WEB_DOWNLOAD.",
@@ -19443,10 +19494,10 @@ class AppWindow(ctk.CTk):
             text="Provider capabilities (honest)",
             font=ctk.CTkFont(size=14, weight="bold"),
             text_color=_HC_LABEL,
-        ).grid(row=13, column=0, sticky="w", pady=(8, 2))
+        ).grid(row=15, column=0, sticky="w", pady=(8, 2))
         cap_box = ctk.CTkTextbox(frame, height=100, font=ctk.CTkFont(family="Consolas", size=11))
         try:
-            cap_box.grid(row=14, column=0, sticky="ew", pady=4)
+            cap_box.grid(row=16, column=0, sticky="ew", pady=4)
             cap_box.insert("1.0", format_capability_matrix())
             cap_box.configure(state="disabled")
         except Exception:  # noqa: BLE001
@@ -19454,7 +19505,7 @@ class AppWindow(ctk.CTk):
 
         # Task #1: Direct Grok (xAI) — preferred over OpenRouter
         grok_bar = ctk.CTkFrame(frame, fg_color=("#dbeafe", "#1e293b"), corner_radius=10)
-        grok_bar.grid(row=15, column=0, sticky="ew", pady=(10, 6))
+        grok_bar.grid(row=17, column=0, sticky="ew", pady=(10, 6))
         ctk.CTkLabel(
             grok_bar,
             text="Use Grok directly (xAI) — no CLI, no OpenRouter credits required",
@@ -19493,15 +19544,15 @@ class AppWindow(ctk.CTk):
             text="LLM providers & keys — xAI Grok, OpenRouter, OpenAI, Offline · Ollama (local)…",
             font=ctk.CTkFont(size=14, weight="bold"),
             text_color=_HC_LABEL,
-        ).grid(row=16, column=0, sticky="w", pady=(8, 4))
+        ).grid(row=18, column=0, sticky="w", pady=(8, 4))
 
         body = ctk.CTkFrame(frame)
-        body.grid(row=17, column=0, sticky="ew", pady=(0, 8))
+        body.grid(row=19, column=0, sticky="ew", pady=(0, 8))
         body.grid_columnconfigure(1, weight=1)
 
         # Bottom save (after scrolling to providers)
         bottom_save = ctk.CTkFrame(frame, fg_color="transparent")
-        bottom_save.grid(row=18, column=0, sticky="ew", pady=(12, 20))
+        bottom_save.grid(row=20, column=0, sticky="ew", pady=(12, 20))
         ctk.CTkButton(
             bottom_save,
             text="💾  Save all settings",
@@ -19772,6 +19823,118 @@ class AppWindow(ctk.CTk):
             toast=True,
         )
 
+
+    def _export_studio_bundle_dialog(self) -> None:
+        """Export selected data/ into a portable studio bundle zip."""
+        from datetime import datetime, timezone
+        from tkinter import filedialog
+
+        try:
+            from app.core.services.misc import studio_bundle as sb
+        except Exception as e:  # noqa: BLE001
+            messagebox.showerror("Export studio bundle", str(e), parent=self)
+            return
+
+        include_secrets = messagebox.askyesno(
+            "Export studio bundle",
+            "Include API keys and secrets in the zip?\n\n"
+            "Choose No (recommended) to redact keys.\n"
+            "Choose Yes only if you will keep the zip private.",
+            parent=self,
+        )
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+        path = filedialog.asksaveasfilename(
+            parent=self,
+            title="Export studio bundle",
+            defaultextension=".zip",
+            initialfile=f"studio-bundle-{stamp}.zip",
+            filetypes=[("Studio bundle zip", "*.zip"), ("All files", "*.*")],
+        )
+        if not path:
+            return
+        try:
+            result = sb.export_studio_bundle(path, include_secrets=bool(include_secrets))
+        except Exception as e:  # noqa: BLE001
+            messagebox.showerror("Export studio bundle", str(e), parent=self)
+            return
+        if not result.get("ok"):
+            messagebox.showerror(
+                "Export studio bundle",
+                str(result.get("error") or "Export failed"),
+                parent=self,
+            )
+            return
+        n = int(result.get("file_count") or 0)
+        secrets = "with secrets" if include_secrets else "secrets redacted"
+        self.set_status(f"Exported studio bundle ({n} files, {secrets})", toast=True)
+        messagebox.showinfo(
+            "Export studio bundle",
+            f"Saved {n} files to:\n{result.get('path')}\n\n({secrets})",
+            parent=self,
+        )
+
+    def _import_studio_bundle_dialog(self) -> None:
+        """Import a studio bundle zip with merge or replace choice."""
+        from tkinter import filedialog
+
+        try:
+            from app.core.services.misc import studio_bundle as sb
+        except Exception as e:  # noqa: BLE001
+            messagebox.showerror("Import studio bundle", str(e), parent=self)
+            return
+
+        path = filedialog.askopenfilename(
+            parent=self,
+            title="Import studio bundle",
+            filetypes=[("Studio bundle zip", "*.zip"), ("All files", "*.*")],
+        )
+        if not path:
+            return
+        try:
+            peek = sb.describe_bundle(path)
+        except Exception:  # noqa: BLE001
+            peek = {"ok": False}
+        if not peek.get("ok"):
+            messagebox.showerror(
+                "Import studio bundle",
+                str(peek.get("error") or "Not a readable studio bundle zip"),
+                parent=self,
+            )
+            return
+
+        do_merge = messagebox.askyesno(
+            "Import studio bundle",
+            "Merge into existing data?\n\n"
+            "Yes = Merge (keep local items; incoming wins on same id)\n"
+            "No = Replace included categories from the zip\n\n"
+            f"Files in zip: {peek.get('file_count', '?')}",
+            parent=self,
+        )
+        mode = "merge" if do_merge else "replace"
+        try:
+            result = sb.import_studio_bundle(path, mode=mode)
+        except Exception as e:  # noqa: BLE001
+            messagebox.showerror("Import studio bundle", str(e), parent=self)
+            return
+        if not result.get("ok"):
+            messagebox.showerror(
+                "Import studio bundle",
+                str(result.get("error") or "Import failed"),
+                parent=self,
+            )
+            return
+        n = int(result.get("restored_count") or len(result.get("restored") or []))
+        warn = result.get("warnings") or []
+        extra = f"\nWarnings: {len(warn)}" if warn else ""
+        self.set_status(f"Imported studio bundle ({mode}, {n} files)", toast=True)
+        messagebox.showinfo(
+            "Import studio bundle",
+            f"Restored {n} files ({mode}).{extra}\n\n"
+            "Restart or reopen pages if lists look stale.",
+            parent=self,
+        )
+
+
     def _page_about(self) -> None:
         from app.ui.themes import style_card, style_chrome_button, UI as _UI
         from app.core.services.misc.version_check import install_summary, check_for_updates
@@ -19825,8 +19988,45 @@ class AppWindow(ctk.CTk):
             ),
         ).pack(anchor="w", padx=16, pady=(0, 8))
 
+        # Studio data bundle — export / import portable zip
+        bundle = ctk.CTkFrame(frame, **style_card())
+        bundle.grid(row=2, column=0, sticky="ew", pady=8)
+        ctk.CTkLabel(
+            bundle,
+            text="Studio bundle",
+            font=ctk.CTkFont(size=14, weight="bold"),
+            text_color=_UI["label"],
+        ).pack(anchor="w", padx=16, pady=(12, 4))
+        ctk.CTkLabel(
+            bundle,
+            text=(
+                "Export a portable .zip of settings, knowledge, notes, channels,\n"
+                "automations, chat list metadata, and the artifacts index.\n"
+                "API keys are redacted by default (optional include-secrets on export)."
+            ),
+            text_color=_UI["muted"],
+            justify="left",
+            anchor="w",
+        ).pack(anchor="w", padx=16, pady=(0, 8))
+        brow = ctk.CTkFrame(bundle, fg_color="transparent")
+        brow.pack(fill="x", padx=12, pady=(0, 12))
+        ctk.CTkButton(
+            brow,
+            text="Export studio bundle",
+            width=170,
+            command=self._export_studio_bundle_dialog,
+            **style_chrome_button(primary=True),
+        ).pack(side="left", padx=4)
+        ctk.CTkButton(
+            brow,
+            text="Import studio bundle",
+            width=170,
+            command=self._import_studio_bundle_dialog,
+            **style_chrome_button(),
+        ).pack(side="left", padx=4)
+
         upd = ctk.CTkFrame(frame, **style_card())
-        upd.grid(row=2, column=0, sticky="ew", pady=8)
+        upd.grid(row=3, column=0, sticky="ew", pady=8)
         ctk.CTkLabel(
             upd,
             text="Updates",

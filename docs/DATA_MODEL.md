@@ -200,3 +200,8 @@ Ephemeral Live → Artifacts (This turn) remains in-memory from chat/messages; *
 File: `data/automations.json` → `{ items: [ { id, name, prompt, schedule_kind, interval_minutes, hour, minute, enabled, last_run, next_run, last_status, last_error, last_chat_id, run_count, created_at, updated_at } ], updated_at }`
 
 `schedule_kind`: `hourly` | `daily` | `weekday` | `interval`. Separate from `data/schedules.json` (company agent scheduler).
+
+### Studio bundle (1.27.99)
+
+Portable zip via Settings/About → Export/Import. Includes config/providers (keys redacted by default), `knowledge/`, `notes/`, `channels/`, `automations.json`, `chats/index.json`, `artifacts/index.json`. Excludes full chat bodies, artifact blobs, runs/logs. See `app.core.services.misc.studio_bundle`.
+

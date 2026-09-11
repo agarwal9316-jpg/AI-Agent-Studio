@@ -1,6 +1,6 @@
 # Continuity — resume without chat history
 
-**Head:** 1.27.98 — Docs sync process (branch `feat/roadmap-docs-sync`).
+**Head:** 1.27.99 — Studio bundle export/import (branch `feat/roadmap-studio-bundle`).
 
 
 **Goal:** After months, open the project folder and continue.
@@ -25,7 +25,8 @@
 
 ## Resume here (update every release)
 
-- **Last version:** **1.27.98** (Docs sync process — `scripts/check_docs_sync.py` + RELEASE checklist; enforced VERSION trio / CHANGELOG / CONTINUITY / FEATURES)
+- **Last version:** **1.27.99** (Studio bundle export/import — portable data zip; secrets redacted by default; Settings+About; merge/replace)
+- **Prior:** **1.27.98** (Docs sync process — `scripts/check_docs_sync.py` + RELEASE checklist; enforced VERSION trio / CHANGELOG / CONTINUITY / FEATURES)
 - **Prior:** **1.27.97** (Virtualized long chat history — sliding window 50/max 200; Load older/newer; soft-degrade; no stream full-rebuild)
 - **Prior:** **1.27.96** (Filesystem sandbox profiles — Read-only workspace / Project-only / Full disk with ask; custom roots; file+shell enforce)
 - **Prior:** **1.27.95** (P2.2 Artifacts persistent store — Live Artifacts This turn/Saved; `data/artifacts/`; soft-degrade)
