@@ -1,11 +1,12 @@
 # Feature inventory
 
-**Version:** 1.28.0  
+**Version:** 1.28.1  
 **Maintained here** (root `FEATURES.md` is a pointer).  
 **History:** [CHANGELOG.md](CHANGELOG.md) · resume [CONTINUITY.md](CONTINUITY.md)
 
 | Feature | Status | Where |
 |---------|--------|--------|
+| **Code signing (portable EXE)** | Yes | `scripts/sign_portable.ps1` / `.sh` · `docs/CODE_SIGNING.md` · user-provided cert · self-signed DEV only · 1.28.1 |
 | **Richer flow canvas** | Yes | Org chart → **Flow canvas** · nodes+edges · pan/zoom/drag/link · save with `workflow_graph` · `flow_canvas` · soft-degrade · 1.28.0 |
 | **Studio bundle export/import** | Yes | Settings + About · portable `data/` zip · secrets redacted by default · merge/replace · `studio_bundle` · 1.27.99 |
 | **Docs sync release gate** | Yes | `scripts/check_docs_sync.py` · `docs/RELEASE.md` · CI-style local check · 1.27.98 |
@@ -151,7 +152,7 @@
 | MCP + marketplace | Yes | MCP · Marketplace |
 | Laptop GUI control | Yes | Screenshot · GUI · clipboard · windows |
 | Attachments + large-file choice | Yes | Composer 📎 |
-| Portable PyInstaller build | Yes | `build_portable.ps1` |
+| Portable PyInstaller build | Yes | `build_portable.ps1` (+ optional sign hook) |
 | Launch native ensure | Yes | Launch.bat |
 
 ## Self-improve (quick)

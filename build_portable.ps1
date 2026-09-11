@@ -113,6 +113,22 @@ try {
     Write-Host "NOTE: could not stamp VERSION from app.version"
 }
 
+
+# Code signing (optional) — see docs/CODE_SIGNING.md
+# Uses AAS_SIGN_CERT / AAS_SIGN_PASSWORD when set; skips gracefully otherwise.
+$signScript = Join-Path $PSScriptRoot "scripts\sign_portable.ps1"
+if (Test-Path -LiteralPath $signScript) {
+    Write-Host ""
+    Write-Host "Optional Authenticode sign (scripts\sign_portable.ps1)..."
+    try {
+        & $signScript
+    } catch {
+        Write-Host "NOTE: sign script error (build still OK): $($_.Exception.Message)"
+    }
+} else {
+    Write-Host "NOTE: scripts\sign_portable.ps1 missing — skip signing."
+}
+
 # Copy launch helper next to dist folder for convenience
 $portableBat = Join-Path $PSScriptRoot "Launch_Portable.bat"
 Write-Host ""

@@ -32,3 +32,7 @@ Must exit 0. Automated coverage: `python tests/test_roadmap_docs_sync.py`.
 | Features version | `docs/FEATURES.md` `**Version:**` line (if present) |
 
 Full maintenance cadence: [MAINTENANCE.md](MAINTENANCE.md).
+
+## Portable EXE signing (optional)
+
+After `build_portable.ps1`, sign with a **user-provided** Authenticode cert — see [CODE_SIGNING.md](CODE_SIGNING.md). Pipeline skips if secrets/tools are missing.

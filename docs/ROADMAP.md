@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current:** v1.28.0 — Cockpit + Models/Train lab + Mission Control + Team multi-AI + Flow canvas.
+**Current:** v1.28.1 — Cockpit + Models/Train lab + Mission Control + Team multi-AI + Flow canvas + code-sign pipeline.
 
 ---
 
@@ -43,12 +43,12 @@
 - [x] Keep docs/ in sync on every release (process) (1.27.98)  
 - [x] Export/import full studio bundle (data zip) (1.27.99)  
 - [x] Richer flow canvas (beyond workflow tree) (1.28.0)  
+- [x] Code signing for portable exe (1.28.1) — pipeline ready; cert is user-provided  
 
 ---
 
 ## Later
 
-- [ ] Code signing for portable exe  
 - [ ] Optional icons / branding pack  
 
 ---

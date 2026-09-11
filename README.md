@@ -15,7 +15,7 @@ Inspired by AutoGen / CrewAI / Dify / Langflow for **patterns only** — origina
 2. Unzip a release or clone this repo.
 3. Double-click **`Start.bat`** (or `Launch.bat`).
    - First run creates `.venv`, installs `requirements.txt`, and installs portable Chromium into `./browsers`.
-4. Optional portable EXE: run `build_portable.ps1`, then `Launch_Portable.bat`.
+4. Optional portable EXE: run `build_portable.ps1`, then `Launch_Portable.bat`. Optional Authenticode sign: [docs/CODE_SIGNING.md](docs/CODE_SIGNING.md) (user-provided cert; self-signed = DEV ONLY).
 
 ## Android companion
 

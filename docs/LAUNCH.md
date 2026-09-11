@@ -43,6 +43,18 @@ Run:
 Distribute: zip **`dist\AI-Agent-Studio\`** entire folder.  
 Data is created as `data\` next to the exe.
 
+Optional **Authenticode sign** after build (cert is user-provided; skips if unset):
+
+```powershell
+$env:AAS_SIGN_CERT = "C:\secrets\aas-codesign.pfx"
+$env:AAS_SIGN_PASSWORD = "••••"
+.\scripts\sign_portable.ps1
+```
+
+`build_portable.ps1` calls the sign script automatically when present.  
+Full guide: [CODE_SIGNING.md](CODE_SIGNING.md) (self-signed = DEV ONLY — not for distribution trust).
+
+
 ---
 
 ## Prerequisites

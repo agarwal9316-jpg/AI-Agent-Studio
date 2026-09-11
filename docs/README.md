@@ -19,6 +19,7 @@
 | [CHANGELOG.md](CHANGELOG.md) | Version history |
 | [ROADMAP.md](ROADMAP.md) | Done vs next |
 | [LAUNCH.md](LAUNCH.md) | Dev + portable launch |
+| [CODE_SIGNING.md](CODE_SIGNING.md) | Portable EXE Authenticode / osslsigncode pipeline |
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Common failures |
 | [SELF_IMPROVE.md](SELF_IMPROVE.md) | Safe self-modify protocol |
 | [CONTINUITY.md](CONTINUITY.md) | Resume after months without chat history |
