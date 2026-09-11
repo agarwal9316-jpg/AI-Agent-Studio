@@ -1,8 +1,8 @@
 {
-  "tag": "v1.27.93",
-  "versionName": "1.27.93",
-  "versionCode": 93,
-  "apkUrl": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/download/v1.27.93/AI-Agent-Studio-1.27.93-debug.apk",
-  "htmlUrl": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/tag/v1.27.93",
-  "notes": "1.27.93 - Open WebUI–inspired P1: Notes, Channels, Automations, Message queue. Portable PC (Start.bat) + Android companion."
+  "tag": "v1.28.2",
+  "versionName": "1.28.2",
+  "versionCode": 12802,
+  "apkUrl": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/download/v1.28.2/AI-Agent-Studio-1.28.2-debug.apk",
+  "htmlUrl": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/tag/v1.28.2",
+  "notes": "1.28.2 - Do-all pack finale: branding pack + flow canvas + code-sign + studio bundle + virt chat + sandbox + docs sync + artifacts + better voice (since 1.27.93). Portable PC (Start.bat) + Android companion. versionCode scheme: MMmmPP \u2192 12802 (was last-segment only through 1.27.x)."
 }
