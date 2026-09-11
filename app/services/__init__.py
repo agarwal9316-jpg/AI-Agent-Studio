@@ -16,6 +16,7 @@ from app.core.services import web
 from app.core.services.chat import chat_store
 from app.core.services.chat import memory_store
 from app.core.services.chat import notes_store
+from app.core.services.chat import automations_store
 from app.core.services.company import company_store
 from app.core.services.company import org_comms
 from app.core.services.company import org_tools
@@ -68,6 +69,7 @@ __all__ = [
     "chat_store",
     "memory_store",
     "notes_store",
+    "automations_store",
     "company_store",
     "org_comms",
     "org_tools",

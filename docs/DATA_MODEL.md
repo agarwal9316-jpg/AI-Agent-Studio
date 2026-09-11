@@ -177,3 +177,10 @@ auto_approved?, …
 ## 6. Reset
 
 Close app → delete `data/` (and optionally `browsers/` to re-download Chromium).
+
+
+## Automations (1.27.92)
+
+File: `data/automations.json` → `{ items: [ { id, name, prompt, schedule_kind, interval_minutes, hour, minute, enabled, last_run, next_run, last_status, last_error, last_chat_id, run_count, created_at, updated_at } ], updated_at }`
+
+`schedule_kind`: `hourly` | `daily` | `weekday` | `interval`. Separate from `data/schedules.json` (company agent scheduler).

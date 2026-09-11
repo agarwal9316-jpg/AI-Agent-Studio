@@ -90,6 +90,7 @@ from app.core.services.tools.skills_registry import discover_skills
 from app.ui import mgmt_pages
 from app.ui.pages import notes_page
 from app.ui.pages import channels_page
+from app.ui.pages import automations_page
 from app.version import APP_NAME, __version__
 
 NAV_ITEMS = (
@@ -107,6 +108,7 @@ NAV_ITEMS = (
     "Knowledge",
     "Notes",
     "Channels",
+    "Automations",
     "Schedule",
     "Org chart",
     "Memory",
@@ -815,6 +817,13 @@ class AppWindow(ctk.CTk):
                 file_watcher.start()
             if scheduler_service.load_schedules():
                 scheduler_service.start()
+            try:
+                from app.core.services.chat import automations_store as _aus
+
+                if any(a.get("enabled") for a in _aus.list_automations()):
+                    _aus.start()
+            except Exception:  # noqa: BLE001
+                pass
         except Exception:  # noqa: BLE001
             pass
         # Task #13: global hotkey ask-about-clipboard
@@ -1106,7 +1115,7 @@ class AppWindow(ctk.CTk):
             ]
         return [
             ("PRIMARY", ("Home", "Chat", "Team", "Models", "Monitor", "Help")),
-            ("WORKSPACE", ("Work", "Approvals", "Knowledge", "Notes", "Channels", "Org chart")),
+            ("WORKSPACE", ("Work", "Approvals", "Knowledge", "Notes", "Channels", "Automations", "Org chart")),
             (
                 "MORE",
                 (
@@ -2946,6 +2955,7 @@ class AppWindow(ctk.CTk):
             "Knowledge": self._page_knowledge,
             "Notes": lambda: notes_page.page_notes(self),
             "Channels": lambda: channels_page.page_channels(self),
+            "Automations": lambda: automations_page.page_automations(self),
             "Schedule": self._page_schedule,
             "Memory": lambda: mgmt_pages.page_memory(self),
             "Projects": lambda: mgmt_pages.page_projects(self),

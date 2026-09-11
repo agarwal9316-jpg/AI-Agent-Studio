@@ -1,6 +1,6 @@
 # Continuity — resume without chat history
 
-**Head:** 1.27.91 — P1.2 Channels workspace (branch `feat/owui-p1-channels`). Automations not started.
+**Head:** 1.27.92 — P1.3 Automations workspace (branch `feat/owui-p1-automations`).
 
 
 **Goal:** After months, open the project folder and continue.
@@ -25,7 +25,7 @@
 
 ## Resume here (update every release)
 
-- **Last version:** **1.27.91** (P1.2 Channels — user+model timeline, soft pins/threads)
+- **Last version:** **1.27.92** (P1.3 Automations — schedule prompts → linked chat, soft-degrade)
 - **Recent (1.27.7–1.27.34):**
   - Chat delete reliability + title repair; **OS-only** min/max/close (no duplicate chrome)
   - **Org chart:** pan/drag view, expand/collapse teams, Reset → CEO top; continuous connectors; soft-select (no click flicker)

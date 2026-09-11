@@ -1,6 +1,6 @@
 # Feature inventory
 
-**Version:** 1.27.90  
+**Version:** 1.27.92  
 **Maintained here** (root `FEATURES.md` is a pointer).  
 **History:** [CHANGELOG.md](CHANGELOG.md) · resume [CONTINUITY.md](CONTINUITY.md)
 
@@ -25,6 +25,7 @@
 | Hybrid RAG (BM25 + embeddings + RRF) | Yes | Settings toggle (default ON) · `rag_knowledge.hybrid_search` · soft-degrade · 1.27.89 |
 | Notes workspace + attach to chat | Yes | Sidebar **Notes** · `notes_store` · chips · full-context inject · AI rewrite soft-degrade · 1.27.90 |
 | Channels (user + model timeline) | Yes | Sidebar **Channels** · `channels_store` · @mention/picker ask · soft pins/threads · soft-degrade · 1.27.91 |
+| Automations (scheduled prompts → chat) | Yes | Sidebar **Automations** · `automations_store` · ticker · Run now · linked chat · soft-degrade · 1.27.92 |
 | Launch always-visible (no stuck hide) | Yes | theme pre-apply · force deiconify · no alpha-0 |
 | Browser headless→headed anti-bot fallback | Yes | `browser_tool` · captcha wait |
 | Perchance image path (portable Chromium) | Yes | `perchance_image` · may still hit site anti-bot |

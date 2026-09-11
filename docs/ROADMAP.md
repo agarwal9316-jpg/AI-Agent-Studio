@@ -34,6 +34,7 @@
 - [x] Hybrid RAG lift — BM25 + embeddings + RRF (1.27.89)  
 - [x] Notes workspace + attach-to-chat full-context inject (1.27.90)  
 - [x] Channels (OWUI-inspired) — shared timeline + @model ask (1.27.91)  
+- [x] Automations — schedule prompts → linked chat (1.27.92)  
 - [ ] Filesystem sandbox profiles  
 - [ ] Virtualized long chat history  
 - [ ] Keep docs/ in sync on every release (process)  

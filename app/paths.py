@@ -155,3 +155,8 @@ def company_org_path() -> Path:
 
 def chat_index_path() -> Path:
     return chats_dir() / "index.json"
+
+
+def automations_path() -> Path:
+    """Workspace Automations index (OWUI-inspired P1.3). Separate from company schedules.json."""
+    return data_dir() / "automations.json"

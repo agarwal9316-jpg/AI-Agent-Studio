@@ -17,7 +17,7 @@
 
 ### Sidebar pages (typical order)
 
-Chat · Home · Agents · Tasks · Runs · Chats · Memory · Projects · Company · CEO · Workflow · Knowledge · Notes · Channels · Approvals · Patches · Schedule · Usage · Settings · About  
+Chat · Home · Agents · Tasks · Runs · Chats · Memory · Projects · Company · CEO · Workflow · Knowledge · Notes · Channels · Automations · Approvals · Patches · Schedule · Usage · Settings · About  
 
 *(Exact labels come from `app_window` nav construction.)*
 
@@ -181,3 +181,17 @@ Chat chrome always uses explicit `UI` colors so text stays readable.
 | Reply | Soft thread (`parent_id` / `reply_to`) |
 
 Separate from **Team** goal channels (`data/team_channels/`).
+
+## Automations page (1.27.92)
+
+| Control | Role |
+|---------|------|
+| Search / New / list | Find + create automations |
+| Name + prompt | What to send each run |
+| Schedule | Hourly · Daily · Weekdays · Every N minutes (+ hour/min) |
+| Save / Enable/Disable / Delete | Persist under `data/automations.json` |
+| Run now | Fire immediately → linked result chat |
+| Open last chat | Jump to Chat for `last_chat_id` |
+
+Background ticker (daemon thread) fires due jobs while the app runs. Separate from Company **Schedule**.
+
