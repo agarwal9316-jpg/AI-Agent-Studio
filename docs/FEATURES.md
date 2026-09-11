@@ -1,6 +1,6 @@
 # Feature inventory
 
-**Version:** 1.27.88  
+**Version:** 1.27.89  
 **Maintained here** (root `FEATURES.md` is a pointer).  
 **History:** [CHANGELOG.md](CHANGELOG.md) · resume [CONTINUITY.md](CONTINUITY.md)
 
@@ -22,6 +22,7 @@
 | Native OpenAI tool_calls + role:tool | Yes | Settings toggle · `native_tool_calls` · dual-path · 1.27.86 |
 | Multi-model compare / arena | Yes | Chat **Compare** chip · `multimodel` · 2–3 parallel text replies · 1.27.87 |
 | `#` doc + URL inject | Yes | Composer `#token` · `hash_inject` · knowledge/file/URL · soft-degrade · 1.27.88 |
+| Hybrid RAG (BM25 + embeddings + RRF) | Yes | Settings toggle (default ON) · `rag_knowledge.hybrid_search` · soft-degrade · 1.27.89 |
 | Launch always-visible (no stuck hide) | Yes | theme pre-apply · force deiconify · no alpha-0 |
 | Browser headless→headed anti-bot fallback | Yes | `browser_tool` · captcha wait |
 | Perchance image path (portable Chromium) | Yes | `perchance_image` · may still hit site anti-bot |
@@ -106,7 +107,7 @@
 | Provider + model search | Yes | Chat row 1 |
 | High-contrast chrome themes | Yes | `themes.py` UI palette |
 | Portable Chromium browser | Yes | `BROWSER` · `./browsers` · Launch auto-setup |
-| Local Knowledge RAG | Yes | Knowledge · hybrid FTS + embeddings |
+| Local Knowledge RAG | Yes | Knowledge · hybrid BM25 + embeddings + RRF · 1.27.89 |
 | Folder auto-watch | Yes | Knowledge |
 | Web search | Yes | `WEB_SEARCH` · APIs + free backends · auto page-read (`fetch: N`) |
 | Web fetch | Yes | `WEB_FETCH` · HTTP GET/POST any URL / API |

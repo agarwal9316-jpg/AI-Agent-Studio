@@ -1,7 +1,7 @@
 {
   "name": "AI Agent Studio",
-  "version": "1.27.88",
-  "notes": "P0.3 # doc + URL inject into chat context \u2014 knowledge/file/URL, soft-degrade",
+  "version": "1.27.89",
+  "notes": "P0.4 Hybrid RAG lift \u2014 BM25 + embeddings + RRF/cross-score, Settings toggle, soft-degrade",
   "download_url": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/latest",
   "source": "github"
 }

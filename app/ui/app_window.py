@@ -16512,7 +16512,7 @@ class AppWindow(ctk.CTk):
                 f"{health.get('watches', 0)} watches"
             )
         except Exception:  # noqa: BLE001
-            hsub = "Index PDFs/MD/code · hybrid FTS+embeddings · optional folder auto-watch."
+            hsub = "Index PDFs/MD/code · hybrid BM25+embeddings+RRF · optional folder auto-watch."
         self._page_header(
             root,
             "Local Knowledge (RAG)",
@@ -17739,6 +17739,9 @@ class AppWindow(ctk.CTk):
         native_tools_var = ctk.BooleanVar(
             master=opts, value=bool(cfg.get("prefer_native_openai_tools", True))
         )
+        hybrid_rag_var = ctk.BooleanVar(
+            master=opts, value=bool(cfg.get("hybrid_rag_enabled", True))
+        )
         dens_cur = str(cfg.get("chat_density") or "compact").lower()
         if dens_cur not in ("compact", "comfortable"):
             dens_cur = "compact"
@@ -17770,6 +17773,11 @@ class AppWindow(ctk.CTk):
             opts,
             text="Prefer native OpenAI tool calls",
             variable=native_tools_var,
+        ).pack(side="left", padx=8, pady=6)
+        ctk.CTkSwitch(
+            opts,
+            text="Hybrid RAG (BM25 + embeddings)",
+            variable=hybrid_rag_var,
         ).pack(side="left", padx=8, pady=6)
         ctk.CTkLabel(opts, text="Chat density").pack(side="left", padx=(12, 4))
         ctk.CTkOptionMenu(
@@ -18078,6 +18086,10 @@ class AppWindow(ctk.CTk):
             self.cfg["auto_save_results_to_project"] = bool(auto_proj_var.get())
             self.cfg["tool_approval_required"] = bool(tool_ap_var.get())
             self.cfg["prefer_native_openai_tools"] = bool(native_tools_var.get())
+            try:
+                self.cfg["hybrid_rag_enabled"] = bool(hybrid_rag_var.get())
+            except Exception:  # noqa: BLE001
+                self.cfg["hybrid_rag_enabled"] = True
             self.cfg["self_improve_require_review"] = bool(si_review_var.get())
             # Voice (#18)
             try:

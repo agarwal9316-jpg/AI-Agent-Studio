@@ -391,6 +391,406 @@ def search(
     return results[:limit]
 
 
+
+# ---------------------------------------------------------------------------
+# P0.4 Hybrid RAG — BM25 (FTS5) + optional embeddings + RRF / cross-score
+# Ideas from Open WebUI hybrid search (BM25 + vector + Ensemble/RRF),
+# reimplemented with stdlib + existing hashing embeddings (no vector DB).
+# ---------------------------------------------------------------------------
+
+HYBRID_RRF_K = 60
+DEFAULT_BM25_WEIGHT = 0.5
+DEFAULT_HYBRID_CANDIDATE_MULT = 4
+
+
+def hybrid_rag_enabled(cfg: dict[str, Any] | None = None) -> bool:
+    """Settings toggle — Hybrid RAG ON by default (safe: soft-degrades to lexical)."""
+    if cfg is None:
+        try:
+            from app.core.services.data.storage import load_config
+
+            cfg = load_config()
+        except Exception:  # noqa: BLE001
+            return True
+    return bool((cfg or {}).get("hybrid_rag_enabled", True))
+
+
+def hybrid_bm25_weight(cfg: dict[str, Any] | None = None) -> float:
+    """Weight for BM25 vs embedding in RRF / cross-score (0=vector-only, 1=BM25-only)."""
+    if cfg is None:
+        try:
+            from app.core.services.data.storage import load_config
+
+            cfg = load_config()
+        except Exception:  # noqa: BLE001
+            cfg = {}
+    try:
+        w = float((cfg or {}).get("hybrid_rag_bm25_weight", DEFAULT_BM25_WEIGHT))
+    except Exception:  # noqa: BLE001
+        w = DEFAULT_BM25_WEIGHT
+    return max(0.0, min(1.0, w))
+
+
+def _hit_key(h: dict[str, Any]) -> str:
+    did = str(h.get("doc_id") or "")
+    idx = h.get("chunk_index")
+    if did and idx is not None:
+        return f"{did}:{idx}"
+    path = str(h.get("path") or "")
+    content = str(h.get("content") or "")
+    return hashlib.sha256(f"{path}|{content[:240]}".encode("utf-8", errors="replace")).hexdigest()[:24]
+
+
+def reciprocal_rank_fusion(
+    ranked_lists: list[list[dict[str, Any]]],
+    *,
+    weights: list[float] | None = None,
+    k: int = HYBRID_RRF_K,
+) -> list[dict[str, Any]]:
+    """
+    Reciprocal Rank Fusion (Cormack et al.).
+
+    For each ranked list i with weight w_i:
+        score(d) += w_i / (k + rank_i(d))
+    where rank is 1-based. Documents are keyed by doc_id:chunk_index.
+
+    Returns merged hits sorted by rrf_score descending (fields from first sighting).
+    """
+    if not ranked_lists:
+        return []
+    if weights is None:
+        weights = [1.0] * len(ranked_lists)
+    if len(weights) != len(ranked_lists):
+        raise ValueError("weights length must match ranked_lists")
+    k = max(1, int(k))
+    scores: dict[str, float] = {}
+    best: dict[str, dict[str, Any]] = {}
+    for lst, w in zip(ranked_lists, weights):
+        w = float(w)
+        if w <= 0 or not lst:
+            continue
+        for rank, h in enumerate(lst, start=1):
+            key = _hit_key(h)
+            scores[key] = scores.get(key, 0.0) + w / (k + rank)
+            if key not in best:
+                best[key] = dict(h)
+            else:
+                # keep richer metadata / better lexical score if present
+                cur = best[key]
+                if not cur.get("content") and h.get("content"):
+                    cur["content"] = h["content"]
+                if h.get("emb_score") is not None and cur.get("emb_score") is None:
+                    cur["emb_score"] = h["emb_score"]
+                if h.get("bm25_score") is not None and cur.get("bm25_score") is None:
+                    cur["bm25_score"] = h["bm25_score"]
+    out: list[dict[str, Any]] = []
+    for key, sc in sorted(scores.items(), key=lambda kv: kv[1], reverse=True):
+        row = best[key]
+        row["rrf_score"] = round(sc, 6)
+        row["score"] = row["rrf_score"]
+        out.append(row)
+    return out
+
+
+def _normalize_bm25_scores(hits: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """
+    SQLite FTS5 bm25() is more-negative = better. Convert to [0,1] relevance
+    where 1 is best among this result set.
+    """
+    if not hits:
+        return []
+    raw: list[float] = []
+    for h in hits:
+        try:
+            raw.append(float(h.get("score") if h.get("score") is not None else 0.0))
+        except Exception:  # noqa: BLE001
+            raw.append(0.0)
+    # more negative → better; shift so best (min) → 1
+    mn = min(raw)
+    mx = max(raw)
+    span = (mx - mn) or 1.0
+    out = []
+    for h, r in zip(hits, raw):
+        # invert: best (mn) → 1.0, worst (mx) → 0.0
+        norm = (mx - r) / span
+        row = dict(h)
+        row["bm25_score"] = round(r, 4)
+        row["bm25_norm"] = round(norm, 4)
+        out.append(row)
+    return out
+
+
+def _embeddings_available() -> bool:
+    try:
+        from app.core.services.ai import local_embeddings as _le  # noqa: F401
+
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def vector_search(
+    query: str,
+    *,
+    limit: int = 8,
+    path_prefix: str = "",
+    pool_limit: int = 2000,
+) -> list[dict[str, Any]]:
+    """
+    Embedding similarity over stored hashing-trick vectors (soft-optional).
+
+    Returns hits with emb_score in [approx -1,1] (cosine), best first.
+    Empty list when embeddings module or vectors unavailable.
+    """
+    q = (query or "").strip()
+    if not q:
+        return []
+    try:
+        from app.core.services.ai.local_embeddings import cosine, embed_text
+    except Exception:  # noqa: BLE001
+        return []
+    prefix = ""
+    if path_prefix:
+        try:
+            prefix = str(Path(path_prefix).expanduser().resolve()).lower()
+        except Exception:  # noqa: BLE001
+            prefix = str(path_prefix).lower()
+    qv = embed_text(q)
+    scored: list[dict[str, Any]] = []
+    try:
+        conn = sqlite3.connect(str(db_path()))
+        conn.row_factory = sqlite3.Row
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS chunk_embeddings (
+                chunk_id INTEGER PRIMARY KEY,
+                dim INTEGER,
+                vector TEXT
+            )
+            """
+        )
+        rows = conn.execute(
+            """
+            SELECT e.chunk_id, e.vector, c.content, c.doc_id, c.chunk_index,
+                   d.path, d.title
+            FROM chunk_embeddings e
+            JOIN chunks c ON c.id = e.chunk_id
+            JOIN documents d ON d.id = c.doc_id
+            ORDER BY e.chunk_id DESC
+            LIMIT ?
+            """,
+            (max(1, int(pool_limit)),),
+        ).fetchall()
+        # If no precomputed vectors, fall back to scoring a lexical candidate pool
+        if not rows:
+            lex = search(q, limit=max(limit * 8, 24), path_prefix=path_prefix)
+            for h in lex:
+                content = h.get("content") or ""
+                sc = cosine(qv, embed_text(content))
+                scored.append(
+                    {
+                        **h,
+                        "emb_score": round(float(sc), 4),
+                        "score": round(float(sc), 4),
+                    }
+                )
+            conn.close()
+            scored.sort(key=lambda x: float(x.get("emb_score") or 0), reverse=True)
+            return scored[:limit]
+        for r in rows:
+            path = r["path"] or ""
+            if prefix and prefix not in str(path).lower():
+                continue
+            try:
+                vec = [float(x) for x in (r["vector"] or "").split(",") if x != ""]
+            except Exception:  # noqa: BLE001
+                continue
+            if not vec:
+                continue
+            sc = cosine(qv, vec)
+            scored.append(
+                {
+                    "content": r["content"],
+                    "doc_id": r["doc_id"],
+                    "chunk_index": r["chunk_index"],
+                    "path": path,
+                    "title": r["title"] or "",
+                    "emb_score": round(float(sc), 4),
+                    "score": round(float(sc), 4),
+                }
+            )
+        conn.close()
+    except Exception:  # noqa: BLE001
+        return []
+    scored.sort(key=lambda x: float(x.get("emb_score") or 0), reverse=True)
+    return scored[:limit]
+
+
+def cross_score_rerank(
+    hits: list[dict[str, Any]],
+    *,
+    bm25_weight: float = DEFAULT_BM25_WEIGHT,
+) -> list[dict[str, Any]]:
+    """
+    Lightweight cross-score rerank after RRF.
+
+    final = w * bm25_norm + (1-w) * emb_norm
+    Missing side → use the available score only (soft-degrade).
+    """
+    w = max(0.0, min(1.0, float(bm25_weight)))
+    emb_vals = [float(h.get("emb_score") or 0.0) for h in hits]
+    e_mn = min(emb_vals) if emb_vals else 0.0
+    e_mx = max(emb_vals) if emb_vals else 0.0
+    e_span = (e_mx - e_mn) or 1.0
+    out: list[dict[str, Any]] = []
+    for h in hits:
+        row = dict(h)
+        has_b = row.get("bm25_norm") is not None
+        has_e = row.get("emb_score") is not None
+        b = float(row.get("bm25_norm") or 0.0)
+        e_raw = float(row.get("emb_score") or 0.0)
+        e = (e_raw - e_mn) / e_span if has_e else 0.0
+        if has_b and has_e:
+            final = w * b + (1.0 - w) * e
+        elif has_b:
+            final = b
+        elif has_e:
+            final = e
+        else:
+            final = float(row.get("rrf_score") or 0.0)
+        row["emb_norm"] = round(e, 4) if has_e else None
+        row["hybrid_score"] = round(final, 4)
+        out.append(row)
+    out.sort(key=lambda x: float(x.get("hybrid_score") or 0), reverse=True)
+    return out
+
+
+def hybrid_search(
+    query: str,
+    *,
+    limit: int = 8,
+    path_prefix: str = "",
+    bm25_weight: float | None = None,
+    use_embeddings: bool = True,
+    rrf_k: int = HYBRID_RRF_K,
+    rerank: bool = True,
+) -> list[dict[str, Any]]:
+    """
+    Hybrid retrieve: BM25 lexical (FTS5) + embedding cosine when available,
+    merged with Reciprocal Rank Fusion, then optional cross-score rerank.
+
+    Soft-degrades to lexical-only if embeddings unavailable or use_embeddings=False.
+    """
+    q = (query or "").strip()
+    if not q:
+        return []
+    if bm25_weight is None:
+        bm25_weight = hybrid_bm25_weight()
+    w = max(0.0, min(1.0, float(bm25_weight)))
+    pool = max(limit * DEFAULT_HYBRID_CANDIDATE_MULT, limit)
+
+    # --- Lexical (BM25 via FTS5) ---
+    lex_raw = search(q, limit=pool, path_prefix=path_prefix)
+    lex = _normalize_bm25_scores(lex_raw)
+
+    # --- Vector (soft-optional) ---
+    vec: list[dict[str, Any]] = []
+    if use_embeddings and w < 1.0 and _embeddings_available():
+        try:
+            vec = vector_search(q, limit=pool, path_prefix=path_prefix)
+        except Exception:  # noqa: BLE001
+            vec = []
+
+    if not lex and not vec:
+        return []
+
+    # Pure modes
+    if not vec or w >= 1.0:
+        out = lex[:limit]
+        for h in out:
+            h.setdefault("hybrid_score", h.get("bm25_norm", 0))
+            h.setdefault("method", "lexical")
+        return out
+    if w <= 0.0:
+        out = vec[:limit]
+        for h in out:
+            h.setdefault("hybrid_score", h.get("emb_score", 0))
+            h.setdefault("method", "vector")
+        return out
+
+    # Annotate lexical hits with emb_score when same key appears in vec
+    vec_by_key = {_hit_key(h): h for h in vec}
+    for h in lex:
+        vh = vec_by_key.get(_hit_key(h))
+        if vh and vh.get("emb_score") is not None:
+            h["emb_score"] = vh["emb_score"]
+    for h in vec:
+        lh = next((x for x in lex if _hit_key(x) == _hit_key(h)), None)
+        if lh and lh.get("bm25_norm") is not None:
+            h["bm25_norm"] = lh["bm25_norm"]
+            h["bm25_score"] = lh.get("bm25_score")
+
+    merged = reciprocal_rank_fusion(
+        [lex, vec],
+        weights=[w, 1.0 - w],
+        k=rrf_k,
+    )
+    if rerank:
+        merged = cross_score_rerank(merged, bm25_weight=w)
+    for h in merged:
+        h["method"] = "hybrid"
+    return merged[:limit]
+
+
+def build_context_block_hybrid(
+    query: str,
+    *,
+    limit: int = 6,
+    max_chars: int = 6000,
+    path_prefix: str = "",
+    bm25_weight: float | None = None,
+) -> str:
+    """Context block using hybrid retrieve; citations stay clickable file:// links."""
+    hits = hybrid_search(
+        query,
+        limit=limit,
+        path_prefix=path_prefix,
+        bm25_weight=bm25_weight,
+        use_embeddings=True,
+    )
+    if not hits:
+        return ""
+    parts = ["## Local Knowledge (hybrid BM25 + embeddings + RRF)", ""]
+    cite_lines: list[str] = []
+    total = 0
+    for i, h in enumerate(hits, 1):
+        snip = (h.get("content") or "")[:1200]
+        path = h.get("path") or ""
+        title = h.get("title") or Path(path).name
+        uri = path_to_file_uri(path) if path else ""
+        hs = h.get("hybrid_score", h.get("rrf_score", h.get("emb_score")))
+        score_bit = f" score={hs}" if hs is not None else ""
+        src_line = f"Source: {uri or path}"
+        block = f"### [{i}] {title}{score_bit}\n{src_line}\n\n{snip}\n"
+        if total + len(block) > max_chars:
+            break
+        parts.append(block)
+        if uri:
+            cite_lines.append(f"[{i}] {title} — {uri}")
+        else:
+            cite_lines.append(f"[{i}] {title} — `{path}`")
+        total += len(block)
+    parts.append(
+        "Use these excerpts when answering. **Cite sources inline** like [1], [2] "
+        "matching the numbers above. End with a short **Sources** list using the "
+        "exact file:// links from the Citation index so the user can click them. "
+        "If insufficient, say so."
+    )
+    if cite_lines:
+        parts.append("\n### Citation index\n" + "\n".join(cite_lines))
+    return "\n".join(parts)
+
+
 def format_citation_sources(hits: list[dict[str, Any]]) -> str:
     """User-facing Sources block with clickable file:// links (Task #7)."""
     lines: list[str] = []
@@ -414,6 +814,16 @@ def build_context_block(
     max_chars: int = 6000,
     path_prefix: str = "",
 ) -> str:
+    # P0.4: prefer hybrid when Settings toggle is on (default ON)
+    try:
+        if hybrid_rag_enabled():
+            block = build_context_block_hybrid(
+                query, limit=limit, max_chars=max_chars, path_prefix=path_prefix
+            )
+            if block:
+                return block
+    except Exception:  # noqa: BLE001
+        pass
     hits = search(query, limit=limit, path_prefix=path_prefix)
     if not hits:
         return ""

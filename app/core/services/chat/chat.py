@@ -70,7 +70,7 @@ from app.core.services.data.rag_knowledge import (
     run_knowledge_command,
     tool_instructions as knowledge_tool_instructions,
 )
-from app.core.services.ai.local_embeddings import build_context_block_hybrid
+from app.core.services.data.rag_knowledge import build_context_block as build_context_block_hybrid
 from app.core.services.web.ocr_service import extract_ocr_blocks, ocr_image, tool_instructions as ocr_tool_instructions
 from app.core.services.misc.patch_review import (
     extract_patch_blocks,
@@ -967,7 +967,7 @@ def send_user_message(
     except Exception:  # noqa: BLE001
         pass
 
-    # Local Knowledge RAG: hybrid FTS + embeddings
+    # Local Knowledge RAG: hybrid BM25 + embeddings + RRF (P0.4; toggle hybrid_rag_enabled)
     try:
         # Task #7: optional folder scope from Chat-with-folder
         folder_scope = ""

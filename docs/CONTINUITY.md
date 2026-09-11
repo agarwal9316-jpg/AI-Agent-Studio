@@ -22,7 +22,7 @@
 
 ## Resume here (update every release)
 
-- **Last version:** **1.27.88** (P0.3 `#` doc + URL inject)
+- **Last version:** **1.27.89** (P0.4 Hybrid RAG BM25 + embeddings + RRF)
 - **Recent (1.27.7–1.27.34):**
   - Chat delete reliability + title repair; **OS-only** min/max/close (no duplicate chrome)
   - **Org chart:** pan/drag view, expand/collapse teams, Reset → CEO top; continuous connectors; soft-select (no click flicker)
