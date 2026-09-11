@@ -11,8 +11,8 @@ android {
         applicationId = "com.aiagentstudio.companion"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.27.80"
+        versionCode = 85
+        versionName = "1.27.85"
     }
 
     buildTypes {

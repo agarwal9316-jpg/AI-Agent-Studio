@@ -18,8 +18,8 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(binding.toolbar)
 
         val versionName = try {
-            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.27.80"
-        } catch (_: Exception) { "1.27.80" }
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.27.85"
+        } catch (_: Exception) { "1.27.85" }
         binding.versionText.text = getString(R.string.version_fmt, versionName)
 
         binding.webView.settings.javaScriptEnabled = false
