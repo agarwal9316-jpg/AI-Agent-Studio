@@ -4,8 +4,8 @@
 **Rule:** Execute **one task at a time** → test/debug → mark done → next.  
 **Status:** `pending` | `in_progress` | `done` | `blocked` | `skipped`
 
-Last updated: 2026-08-12 · App version: **1.27.18**  
-*(Tasks #1–15 done at 1.26.x; 1.27.x was org chart / chat UI polish — see CHANGELOG. Next sequential task remains #16.)*
+Last updated: 2026-09-11 · App version: **1.27.81**  
+*(Tasks #1–15 done at 1.26.x; #19 tray done at 1.27.81. Next sequential task remains #16.)*
 
 ---
 
@@ -31,7 +31,7 @@ Last updated: 2026-08-12 · App version: **1.27.18**
 | 16 | Export audit log of all tool calls | P1 | pending | next |
 | 17 | Offline Ollama path clearly labeled | P1 | pending | |
 | 18 | Voice in/out first-class | P2 | pending | Partial STT exists |
-| 19 | System tray + run in background | P2 | pending | |
+| 19 | System tray + run in background | P2 | **done** | 1.27.81 · pystray Show/Hide/Quit · start minimized |
 | 20 | Optional Grok CLI session reuse (if product/legal allows) | P2 | pending | Research first |
 
 ---
@@ -40,6 +40,7 @@ Last updated: 2026-08-12 · App version: **1.27.18**
 
 | # | Task | Version | Date |
 |---|------|---------|------|
+| 19 | System tray + run in background | 1.27.81 | 2026-09-11 |
 | 14–15 | Parallel agents + cwd lock sandbox | 1.26.2 | 2026-08-05 |
 | 12–13 | Artifacts panel · global clipboard hotkey | 1.26.1 | 2026-08-05 |
 | 10–11 | Version check UX · prompt library | 1.26.0 | 2026-08-05 |
@@ -58,7 +59,7 @@ Last updated: 2026-08-12 · App version: **1.27.18**
 
 **Next sequential task:** **#16** — Export audit log of all tool calls.
 
-**App head:** **1.27.18** (org AI seats/timeouts/logs · panel Save · launch flicker — see CHANGELOG).
+**App head:** **1.27.81** (system tray #19 · see CHANGELOG).
 
 ---
 

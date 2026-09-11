@@ -8,6 +8,7 @@ Versions from `app/version.py`. Newest first within major eras.
 
 | Version | Notes |
 |---------|--------|
+| **1.27.81** | **PENDING #19 — System tray + run in background:** pystray tray icon with **Show / Hide / Quit**; close/minimize can hide to tray; Settings toggles + optional **Start minimized**. Soft-degrades if pystray missing. Launch.bat unchanged. |
 | **1.27.80** | **Thinking shows every step:** Working said 66 but the expander only painted the last 16–24. The bubble now lists the full step list (same count as Working) and snapshots keep the original step objects, not a truncated humanize-only copy. |
 | **1.27.79** | **Chat list owns the mouse wheel:** long replies used an inner CTk box + animated scroller, so the wheel never moved the list and text spilled under Live. Replies grow with the transcript; bind_all routes wheel to the list (not composer/Live). SET_GOAL tags stripped from the bubble. |
 | **1.27.78** | **Chat scroll with in-bubble thinking:** nested CTk textboxes in the thinking expander stole the wheel and left a stale scrollregion. Thinking is labels only; expand/collapse rebinds the wheel and updates the canvas without jumping to the bottom. |

@@ -2,6 +2,8 @@ customtkinter>=5.2.0
 packaging>=23.0
 pyautogui>=0.9.54
 Pillow>=10.0.0
+# System tray (PENDING #19) — soft-degrades if missing
+pystray>=0.19.5
 # LLM native tools (portable)
 playwright>=1.40.0
 pypdf>=4.0.0

@@ -375,6 +375,9 @@ class AppWindow(ctk.CTk):
             except Exception:  # noqa: BLE001
                 pass
         self.protocol("WM_DELETE_WINDOW", self._on_close)
+        self._hidden_in_tray = False
+        self._tray_quitting = False
+        self._setup_system_tray()
         self._bind_global_shortcuts()
         self._start_autosave_timer()
         self._start_status_refresh()
@@ -391,6 +394,9 @@ class AppWindow(ctk.CTk):
 
     def _force_show_window(self) -> None:
         """Guarantee the main window is visible (never leave withdrawn/alpha-0)."""
+        # Respect intentional tray hide / start-minimized (PENDING #19)
+        if getattr(self, "_hidden_in_tray", False):
+            return
         try:
             self.attributes("-alpha", 1.0)
         except Exception:  # noqa: BLE001
@@ -16796,6 +16802,97 @@ class AppWindow(ctk.CTk):
         except Exception:  # noqa: BLE001
             pass
 
+        # PENDING #19: system tray
+        try:
+            from app.services import system_tray as tray_svc
+
+            tray_box = ctk.CTkFrame(upd_box, fg_color="transparent")
+            tray_box.pack(fill="x", padx=10, pady=(0, 10))
+            ctk.CTkLabel(
+                tray_box,
+                text="System tray (run in background)",
+                font=ctk.CTkFont(size=12, weight="bold"),
+                text_color=_HC_LABEL,
+            ).pack(anchor="w", pady=(4, 2))
+            if not tray_svc.is_supported():
+                ctk.CTkLabel(
+                    tray_box,
+                    text="Tray unavailable — install pystray (in requirements.txt) and restart via Launch.bat.",
+                    text_color=_HC_MUTED,
+                    font=ctk.CTkFont(size=11),
+                ).pack(anchor="w")
+            else:
+                tray_on_var = ctk.BooleanVar(value=tray_svc.tray_enabled())
+                close_tray_var = ctk.BooleanVar(value=tray_svc.close_to_tray())
+                min_tray_var = ctk.BooleanVar(value=tray_svc.minimize_to_tray())
+                start_min_var = ctk.BooleanVar(value=tray_svc.start_minimized())
+
+                def _toggle_tray() -> None:
+                    on = bool(tray_on_var.get())
+                    tray_svc.set_tray_enabled(on)
+                    self.cfg["system_tray_enabled"] = on
+                    if on:
+                        self._setup_system_tray()
+                        self.set_status("System tray enabled", toast=True)
+                    else:
+                        try:
+                            tray_svc.stop()
+                        except Exception:  # noqa: BLE001
+                            pass
+                        self.set_status("System tray disabled — close will quit", toast=True)
+
+                def _toggle_close_tray() -> None:
+                    on = bool(close_tray_var.get())
+                    tray_svc.set_close_to_tray(on)
+                    self.cfg["close_to_tray"] = on
+
+                def _toggle_min_tray() -> None:
+                    on = bool(min_tray_var.get())
+                    tray_svc.set_minimize_to_tray(on)
+                    self.cfg["minimize_to_tray"] = on
+
+                def _toggle_start_min() -> None:
+                    on = bool(start_min_var.get())
+                    tray_svc.set_start_minimized(on)
+                    self.cfg["start_minimized"] = on
+                    self.set_status(
+                        "Start minimized on" if on else "Start minimized off",
+                        toast=True,
+                    )
+
+                ctk.CTkSwitch(
+                    tray_box,
+                    text="Enable system tray icon",
+                    variable=tray_on_var,
+                    command=_toggle_tray,
+                ).pack(anchor="w", pady=2)
+                ctk.CTkSwitch(
+                    tray_box,
+                    text="Close (✕) hides to tray instead of quitting",
+                    variable=close_tray_var,
+                    command=_toggle_close_tray,
+                ).pack(anchor="w", pady=2)
+                ctk.CTkSwitch(
+                    tray_box,
+                    text="Minimize button hides to tray",
+                    variable=min_tray_var,
+                    command=_toggle_min_tray,
+                ).pack(anchor="w", pady=2)
+                ctk.CTkSwitch(
+                    tray_box,
+                    text="Start minimized (open in tray)",
+                    variable=start_min_var,
+                    command=_toggle_start_min,
+                ).pack(anchor="w", pady=2)
+                ctk.CTkLabel(
+                    tray_box,
+                    text="Tray menu: Show · Hide · Quit. Agents keep running while hidden.",
+                    text_color=_HC_MUTED,
+                    font=ctk.CTkFont(size=11),
+                ).pack(anchor="w", pady=(2, 0))
+        except Exception:  # noqa: BLE001
+            pass
+
         # Section: Appearance
         ctk.CTkLabel(
             frame,
@@ -16887,15 +16984,78 @@ class AppWindow(ctk.CTk):
             variable=si_review_var,
         ).pack(side="left", padx=8, pady=6)
 
+        # PENDING #18: Voice in/out
+        from app.core.services.ai import voice_settings as _vs
+        from app.core.services.ai.stt_service import stt_capability as _stt_cap
+        from app.core.services.ai.tts_service import tts_capability as _tts_cap
+
+        _vs.ensure_defaults(cfg)
+        ctk.CTkLabel(
+            frame,
+            text="Voice (mic in / read-aloud out)",
+            font=ctk.CTkFont(size=14, weight="bold"),
+            text_color=_HC_LABEL,
+        ).grid(row=6, column=0, sticky="w", pady=(8, 2))
+        voice_box = ctk.CTkFrame(frame)
+        voice_box.grid(row=7, column=0, sticky="ew", pady=6)
+        voice_mic_var = ctk.BooleanVar(master=voice_box, value=bool(cfg.get("voice_mic_enabled", True)))
+        voice_tts_var = ctk.BooleanVar(master=voice_box, value=bool(cfg.get("voice_tts_enabled", True)))
+        voice_auto_var = ctk.BooleanVar(master=voice_box, value=bool(cfg.get("voice_auto_read_aloud", False)))
+        _mode_cur = str(cfg.get("voice_mic_mode") or "push_to_talk")
+        if _mode_cur not in ("push_to_talk", "toggle"):
+            _mode_cur = "push_to_talk"
+        voice_mode_var = ctk.StringVar(master=voice_box, value=_mode_cur)
+        voice_lang_var = ctk.StringVar(master=voice_box, value=str(cfg.get("voice_language") or "en-US"))
+        row_v1 = ctk.CTkFrame(voice_box, fg_color="transparent")
+        row_v1.pack(fill="x", padx=8, pady=4)
+        ctk.CTkSwitch(row_v1, text="Mic input in chat", variable=voice_mic_var).pack(side="left", padx=4)
+        ctk.CTkSwitch(row_v1, text="TTS / Speak button", variable=voice_tts_var).pack(side="left", padx=8)
+        ctk.CTkSwitch(
+            row_v1, text="Auto read-aloud assistant replies", variable=voice_auto_var
+        ).pack(side="left", padx=8)
+        row_v2 = ctk.CTkFrame(voice_box, fg_color="transparent")
+        row_v2.pack(fill="x", padx=8, pady=4)
+        ctk.CTkLabel(row_v2, text="Mic mode", text_color=_HC_LABEL).pack(side="left", padx=(4, 6))
+        ctk.CTkOptionMenu(
+            row_v2,
+            variable=voice_mode_var,
+            values=["push_to_talk", "toggle"],
+            width=140,
+        ).pack(side="left", padx=4)
+        ctk.CTkLabel(
+            row_v2,
+            text="push_to_talk = click 🎤 once · toggle = continuous listen",
+            text_color=_HC_MUTED,
+            font=ctk.CTkFont(size=11),
+        ).pack(side="left", padx=8)
+        ctk.CTkLabel(row_v2, text="Language", text_color=_HC_LABEL).pack(side="left", padx=(12, 4))
+        ctk.CTkEntry(row_v2, textvariable=voice_lang_var, width=90).pack(side="left", padx=4)
+        _stt = _stt_cap()
+        _tts = _tts_cap()
+        _stt_line = (
+            f"STT: {'ready' if _stt.get('available') else 'unavailable'} — {_stt.get('detail') or ''}"
+        )
+        _tts_line = (
+            f"TTS: {'ready' if _tts.get('available') else 'unavailable'} — {_tts.get('detail') or ''}"
+        )
+        ctk.CTkLabel(
+            voice_box,
+            text=_stt_line[:160] + "\n" + _tts_line[:160],
+            text_color=_HC_MUTED,
+            justify="left",
+            anchor="w",
+            font=ctk.CTkFont(size=11),
+        ).pack(anchor="w", padx=12, pady=(2, 8))
+
         # Image presets + capability matrix
         ctk.CTkLabel(
             frame,
             text="Image generation",
             font=ctk.CTkFont(size=14, weight="bold"),
             text_color=_HC_LABEL,
-        ).grid(row=5, column=0, sticky="w", pady=(8, 2))
+        ).grid(row=8, column=0, sticky="w", pady=(8, 2))
         img_row = ctk.CTkFrame(frame)
-        img_row.grid(row=6, column=0, sticky="ew", pady=6)
+        img_row.grid(row=9, column=0, sticky="ew", pady=6)
         ctk.CTkLabel(img_row, text="Image preset", text_color=_HC_LABEL).pack(side="left", padx=8)
         ctk.CTkOptionMenu(
             img_row,
@@ -16940,9 +17100,9 @@ class AppWindow(ctk.CTk):
             text="Web search (internet research)",
             font=ctk.CTkFont(size=14, weight="bold"),
             text_color=_HC_LABEL,
-        ).grid(row=7, column=0, sticky="w", pady=(10, 2))
+        ).grid(row=10, column=0, sticky="w", pady=(10, 2))
         search_box = ctk.CTkFrame(frame)
-        search_box.grid(row=8, column=0, sticky="ew", pady=4)
+        search_box.grid(row=11, column=0, sticky="ew", pady=4)
         search_box.grid_columnconfigure(1, weight=1)
 
         ctk.CTkLabel(
@@ -16994,6 +17154,16 @@ class AppWindow(ctk.CTk):
             self.cfg["auto_save_results_to_project"] = bool(auto_proj_var.get())
             self.cfg["tool_approval_required"] = bool(tool_ap_var.get())
             self.cfg["self_improve_require_review"] = bool(si_review_var.get())
+            # Voice (#18)
+            try:
+                self.cfg["voice_mic_enabled"] = bool(voice_mic_var.get())
+                self.cfg["voice_tts_enabled"] = bool(voice_tts_var.get())
+                self.cfg["voice_auto_read_aloud"] = bool(voice_auto_var.get())
+                _vm = str(voice_mode_var.get() or "push_to_talk")
+                self.cfg["voice_mic_mode"] = _vm if _vm in ("push_to_talk", "toggle") else "push_to_talk"
+                self.cfg["voice_language"] = (voice_lang_var.get() or "en-US").strip() or "en-US"
+            except Exception:  # noqa: BLE001
+                pass
             self.cfg["chat_density"] = dens_var.get() if dens_var.get() in ("compact", "comfortable") else "compact"
             self.cfg["image_preset"] = preset_id_by_label.get(img_preset_var.get(), "custom")
             try:
@@ -17042,6 +17212,10 @@ class AppWindow(ctk.CTk):
                 pass
             storage.save_config(self.cfg)
             self._chat_density = self.cfg["chat_density"]
+            try:
+                self._voice_refresh_composer_buttons()
+            except Exception:  # noqa: BLE001
+                pass
             try:
                 ctk.set_widget_scaling(sc)
                 ctk.set_window_scaling(sc)
@@ -17807,7 +17981,138 @@ class AppWindow(ctk.CTk):
             self.set_status(f"Restore failed: {e}")
         self._crash_restore_chat_id = None
 
+    def _setup_system_tray(self) -> None:
+        """PENDING #19 — system tray Show/Hide/Quit; soft-degrades if pystray missing."""
+        try:
+            from app.services import system_tray as tray
+
+            if not tray.should_use_tray():
+                return
+
+            def _show() -> None:
+                try:
+                    self.after(0, self._show_from_tray)
+                except Exception:  # noqa: BLE001
+                    pass
+
+            def _hide() -> None:
+                try:
+                    self.after(0, self._hide_to_tray)
+                except Exception:  # noqa: BLE001
+                    pass
+
+            def _quit() -> None:
+                try:
+                    self.after(0, self._quit_from_tray)
+                except Exception:  # noqa: BLE001
+                    pass
+
+            tray.set_callbacks(show=_show, hide=_hide, quit_app=_quit)
+            if tray.start():
+                try:
+                    self.bind("<Unmap>", self._on_unmap_minimize, add="+")
+                except Exception:  # noqa: BLE001
+                    pass
+                try:
+                    self.set_status("System tray ready — close/minimize can run in background", toast=False)
+                except Exception:  # noqa: BLE001
+                    pass
+        except Exception:  # noqa: BLE001
+            pass
+
+    def _hide_to_tray(self) -> None:
+        """Withdraw main window; keep running in background via tray."""
+        try:
+            from app.services import system_tray as tray
+
+            if not tray.should_use_tray():
+                return
+            if not tray.start():
+                return
+        except Exception:  # noqa: BLE001
+            return
+        self._hidden_in_tray = True
+        try:
+            # Persist geometry before hide
+            try:
+                st = str(self.state() or "")
+                if st != "zoomed" and st != "iconic":
+                    cfg = storage.load_config()
+                    cfg["window_geometry"] = self.geometry()
+                    storage.save_config(cfg)
+                    if isinstance(getattr(self, "cfg", None), dict):
+                        self.cfg["window_geometry"] = cfg["window_geometry"]
+            except Exception:  # noqa: BLE001
+                pass
+            self.withdraw()
+            try:
+                self.set_status("Running in tray — right-click tray icon → Show / Quit", toast=True)
+            except Exception:  # noqa: BLE001
+                pass
+        except Exception:  # noqa: BLE001
+            self._hidden_in_tray = False
+
+    def _show_from_tray(self) -> None:
+        """Restore main window from tray."""
+        self._hidden_in_tray = False
+        try:
+            self.deiconify()
+            try:
+                self.state("normal")
+            except Exception:  # noqa: BLE001
+                pass
+            self.lift()
+            self.focus_force()
+            try:
+                self.attributes("-topmost", True)
+                self.after(200, lambda: self.attributes("-topmost", False))
+            except Exception:  # noqa: BLE001
+                pass
+            try:
+                self.set_status("Restored from tray", toast=True)
+            except Exception:  # noqa: BLE001
+                pass
+        except Exception:  # noqa: BLE001
+            pass
+
+    def _quit_from_tray(self) -> None:
+        """Fully exit (tray Quit)."""
+        self._tray_quitting = True
+        self._hidden_in_tray = False
+        self._on_close()
+
+    def _on_unmap_minimize(self, event=None) -> None:  # noqa: ANN001
+        """OS minimize → tray when enabled (PENDING #19)."""
+        try:
+            if event is not None and getattr(event, "widget", None) is not self:
+                return
+        except Exception:  # noqa: BLE001
+            pass
+        if getattr(self, "_tray_quitting", False) or getattr(self, "_hidden_in_tray", False):
+            return
+        try:
+            from app.services import system_tray as tray
+
+            if not tray.should_use_tray() or not tray.minimize_to_tray():
+                return
+            st = str(self.state() or "")
+            if st == "iconic":
+                # Defer so Tk finishes iconify before we withdraw
+                self.after(50, self._hide_to_tray)
+        except Exception:  # noqa: BLE001
+            pass
+
     def _on_close(self) -> None:
+        # PENDING #19: X button → tray (background) unless Quit or tray disabled
+        if not getattr(self, "_tray_quitting", False):
+            try:
+                from app.services import system_tray as tray
+
+                if tray.should_use_tray() and tray.close_to_tray():
+                    self._hide_to_tray()
+                    return
+            except Exception:  # noqa: BLE001
+                pass
         try:
             if getattr(self, "_chat_state", None):
                 chat_svc.save_chat(self._chat_state)
@@ -17826,7 +18131,11 @@ class AppWindow(ctk.CTk):
                 cfg["window_maximized"] = is_max
                 self._win_maximized = is_max
                 if not is_max:
-                    cfg["window_geometry"] = self.geometry()
+                    try:
+                        if str(self.state()) != "withdrawn":
+                            cfg["window_geometry"] = self.geometry()
+                    except Exception:  # noqa: BLE001
+                        cfg["window_geometry"] = self.geometry()
             except Exception:  # noqa: BLE001
                 pass
             storage.save_config(cfg)
@@ -17846,6 +18155,12 @@ class AppWindow(ctk.CTk):
             from app.services import global_hotkeys
 
             global_hotkeys.stop()
+        except Exception:  # noqa: BLE001
+            pass
+        try:
+            from app.services import system_tray
+
+            system_tray.stop()
         except Exception:  # noqa: BLE001
             pass
         # Stop system monitor
@@ -17881,7 +18196,26 @@ def run_app(splash: Any = None) -> None:
     # Ensure the window is mapped and rendered before we hide the splash.
     try:
         app.update_idletasks()
-        app.deiconify()
+        # PENDING #19: optional start minimized → tray
+        _start_min = False
+        try:
+            from app.services import system_tray as _tray
+
+            _start_min = bool(_tray.should_use_tray() and _tray.start_minimized())
+        except Exception:  # noqa: BLE001
+            _start_min = False
+        if _start_min:
+            app._hidden_in_tray = True
+            try:
+                app.withdraw()
+            except Exception:  # noqa: BLE001
+                pass
+            try:
+                _tray.start()
+            except Exception:  # noqa: BLE001
+                pass
+        else:
+            app.deiconify()
         app.after(50, lambda: None)  # let the event loop process a frame
     except Exception:  # noqa: BLE001
         pass
