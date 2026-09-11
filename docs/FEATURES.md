@@ -1,11 +1,12 @@
 # Feature inventory
 
-**Version:** 1.27.96  
+**Version:** 1.27.98  
 **Maintained here** (root `FEATURES.md` is a pointer).  
 **History:** [CHANGELOG.md](CHANGELOG.md) · resume [CONTINUITY.md](CONTINUITY.md)
 
 | Feature | Status | Where |
 |---------|--------|--------|
+| **Docs sync release gate** | Yes | `scripts/check_docs_sync.py` · `docs/RELEASE.md` · CI-style local check · 1.27.98 |
 | **AI Organisation chart (visual)** | Yes | Org/Workflow page · `org_chart_view` · CEO top, branch columns, cards |
 | Org expand/collapse + pan view + Reset CEO | Yes | Chart toolbar · bottom Reset · free drag / middle-mouse |
 | Org right panel: All orgs ☑ + workers tree ☑ + Save | Yes | `org_page` · bulk actions · system/worker prompt fields |

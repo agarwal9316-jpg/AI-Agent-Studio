@@ -38,6 +38,7 @@ The studio is a **desktop** CustomTkinter app. The Android APK (from Releases) i
 | Launch | [docs/LAUNCH.md](docs/LAUNCH.md) |
 | Changelog | [docs/CHANGELOG.md](docs/CHANGELOG.md) |
 | Resume after months | [docs/CONTINUITY.md](docs/CONTINUITY.md) |
+| Release / docs sync | [docs/RELEASE.md](docs/RELEASE.md) · `python scripts/check_docs_sync.py` |
 
 ---
 

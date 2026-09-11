@@ -24,6 +24,7 @@
 | [CONTINUITY.md](CONTINUITY.md) | Resume after months without chat history |
 | [EXTERNAL.md](EXTERNAL.md) | Parent Checklist / Plan / Source Code links |
 | [MAINTENANCE.md](MAINTENANCE.md) | How to keep docs accurate |
+| [RELEASE.md](RELEASE.md) | Release checklist + docs sync gate |
 | [UX_PLAN_USER_FRIENDLY.md](UX_PLAN_USER_FRIENDLY.md) | Plan: discoverable, friendly GUI + full feature access |
 
 ---
@@ -35,7 +36,8 @@
 3. Root `FEATURES.md` redirects to `docs/FEATURES.md`.  
 4. When shipping a user-visible change: update **FEATURES**, **CHANGELOG**, and **Resume** in CONTINUITY / root README.  
 5. When adding a tool block: update **TOOLS_PROTOCOL** and `app/services/capability_manual.py`.  
-6. Version source of truth: `app/version.py`.
+6. Version source of truth: `app/version.py` (also `VERSION` + `version_manifest.json`).
+7. Before release: run `python scripts/check_docs_sync.py` (see [RELEASE.md](RELEASE.md)).
 
 ---
 

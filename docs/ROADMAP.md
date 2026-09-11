@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current:** v1.27.97 — Cockpit + Models/Train lab + Mission Control + Team multi-AI.
+**Current:** v1.27.98 — Cockpit + Models/Train lab + Mission Control + Team multi-AI.
 
 ---
 
@@ -40,7 +40,7 @@
 - [x] Artifacts persistent store — Saved library under data/artifacts/ (1.27.95)  
 - [x] Filesystem sandbox profiles (1.27.96)  
 - [x] Virtualized long chat history (1.27.97)  
-- [ ] Keep docs/ in sync on every release (process)  
+- [x] Keep docs/ in sync on every release (process) (1.27.98)  
 
 ---
 

@@ -62,3 +62,15 @@ Data is created as `data\` next to the exe.
 ```bat
 .\.venv\Scripts\python.exe -m app
 ```
+
+---
+
+## Docs sync (releases)
+
+Before shipping a version bump, run:
+
+```bat
+python scripts/check_docs_sync.py
+```
+
+See [RELEASE.md](RELEASE.md).

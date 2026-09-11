@@ -18,6 +18,18 @@ Root `FEATURES.md` and root `README.md` must **link** here, not diverge long-ter
 
 ---
 
+## Enforceable release gate
+
+Every release must pass:
+
+```bat
+python scripts/check_docs_sync.py
+```
+
+See [RELEASE.md](RELEASE.md) for the short checklist (VERSION trio · CHANGELOG · CONTINUITY/FEATURES · checker).
+
+---
+
 ## Checklist when shipping a change
 
 1. Bump `app/version.py` if user-visible.  

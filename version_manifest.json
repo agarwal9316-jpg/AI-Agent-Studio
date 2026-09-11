@@ -1,7 +1,7 @@
 {
   "name": "AI Agent Studio",
-  "version": "1.27.97",
-  "notes": "Virtualized long chat history \u2014 sliding window (last 50, max 200), Load older/newer (+40), From start, \u2193 Latest; no full rebuild on stream tokens",
+  "version": "1.27.98",
+  "notes": "Docs sync process \u2014 scripts/check_docs_sync.py enforces VERSION trio, CHANGELOG row, CONTINUITY Head, FEATURES version; RELEASE checklist + tests",
   "download_url": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/latest",
   "source": "github"
 }
