@@ -1,7 +1,7 @@
 {
   "name": "AI Agent Studio",
-  "version": "1.27.87",
-  "notes": "P0.2 Multi-model parallel chat / arena (Compare) \u2014 text-only, soft-degrade",
+  "version": "1.27.88",
+  "notes": "P0.3 # doc + URL inject into chat context \u2014 knowledge/file/URL, soft-degrade",
   "download_url": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/latest",
   "source": "github"
 }

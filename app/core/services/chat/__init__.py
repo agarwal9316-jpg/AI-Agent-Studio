@@ -8,6 +8,7 @@ from app.core.services.chat import media_chat
 from app.core.services.chat import memory_store
 from app.core.services.chat import orchestrator
 from app.core.services.chat import multimodel
+from app.core.services.chat import hash_inject
 
 # Expose commonly used functions from chat module
 from app.core.services.chat.chat import (
@@ -26,6 +27,7 @@ __all__ = [
     "memory_store",
     "orchestrator",
     "multimodel",
+    "hash_inject",
     "load_chat",
     "save_chat",
     "clear_chat",

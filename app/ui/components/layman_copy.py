@@ -83,7 +83,7 @@ STOP_LABEL = "■  Stop"
 COMPOSER_ASK_ANYTHING = "Ask anything…"
 COMPOSER_WHATS_ON_MIND = "What's on your mind?"
 COMPOSER_HINT_SIMPLE = (
-    "Ask anything…  ·  Enter sends  ·  Shift+Enter new line  ·  📎 attach  ·  🎤 speak"
+    "Ask anything…  ·  #doc or #https://… injects into context  ·  Enter sends  ·  📎  ·  🎤"
 )
 COMPOSER_HINT_PLAN = (
     "Plan only — AI will outline steps, not run tools. Click the chip to allow tools again."
@@ -214,7 +214,7 @@ def composer_hint(*, simple: bool = True, mode: str = "action") -> str:
     if not simple:
         if (mode or "action").lower() == "plan":
             return "Plan mode — tools off · /action to switch · /image · /search · Ctrl+K palette"
-        return f"{COMPOSER_ASK_ANYTHING}  ·  Action mode · /plan · /image · /search · /stop · Ctrl+K"
+        return f"{COMPOSER_ASK_ANYTHING}  ·  Action · #doc/#url · /plan · /image · /search · /stop · Ctrl+K"
     if (mode or "action").lower() == "plan":
         return COMPOSER_HINT_PLAN
     return COMPOSER_HINT_SIMPLE

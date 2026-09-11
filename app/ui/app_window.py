@@ -1031,6 +1031,11 @@ class AppWindow(ctk.CTk):
             "  /stop  /caps  /live  /new  /help\n"
             "  /compact  (toggle density)\n"
             "\n"
+            "Hash inject (composer):\n"
+            "  #filename.md   knowledge / local file\n"
+            "  #./path/file   relative or absolute path\n"
+            "  #https://…     fetch URL into this turn\n"
+            "\n"
             "Chat: + menu · Mode/Tasks/Caps chips · tool traces\n"
             "Self-improve: BACKUP / SELF_IMPROVE blocks\n"
         )
@@ -9563,12 +9568,25 @@ class AppWindow(ctk.CTk):
 
                     self._ui_call(_step)
 
+                sys_for_compare = user_sys or ""
+                try:
+                    from app.core.services.chat.hash_inject import build_hash_inject_block
+                    from app.paths import app_root as _ar
+
+                    _blk, _ = build_hash_inject_block(
+                        text or "",
+                        cwd=getattr(self, "_chat_terminal_cwd", None) or _ar(),
+                    )
+                    if _blk:
+                        sys_for_compare = (sys_for_compare.rstrip() + "\n\n" + _blk).strip()
+                except Exception:  # noqa: BLE001
+                    pass
                 results = run_parallel_completions(
                     models=cleaned,
                     user_text=text or "(empty)",
                     api_key=api_key,
                     base_url=base_url,
-                    system_prompt=user_sys,
+                    system_prompt=sys_for_compare,
                     history=prior,
                     timeout=90.0,
                     on_model_done=on_done,
@@ -14208,6 +14226,26 @@ class AppWindow(ctk.CTk):
                 self._chat_state["draft"] = t.rstrip("\n")
             if t.strip().startswith("/") and " " not in t.strip():
                 self.set_status("Slash: /plan /action /image /search /stop /caps /live /new")
+            # P0.3 lightweight `#` autocomplete hint (knowledge titles)
+            elif "#" in t:
+                try:
+                    from app.core.services.chat.hash_inject import (
+                        parse_hash_tokens,
+                        suggest_hash_completions,
+                    )
+
+                    tail = t.rsplit("#", 1)[-1]
+                    partial = ""
+                    if not t.rstrip().endswith("#"):
+                        partial = (tail.split()[0] if tail.split() else "").rstrip(".,;:!?")
+                    sug = suggest_hash_completions(partial, limit=5)
+                    if sug:
+                        labels = ", ".join(s.get("label") or "" for s in sug[:4])
+                        self.set_status(f"Hash inject: {labels}")
+                    elif parse_hash_tokens(t):
+                        self.set_status("Hash inject: will pull #tokens into this turn on Send")
+                except Exception:  # noqa: BLE001
+                    pass
             # Throttled token meter refresh (Task #3)
             import time
 

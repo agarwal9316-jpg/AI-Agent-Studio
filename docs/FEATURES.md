@@ -1,6 +1,6 @@
 # Feature inventory
 
-**Version:** 1.27.87  
+**Version:** 1.27.88  
 **Maintained here** (root `FEATURES.md` is a pointer).  
 **History:** [CHANGELOG.md](CHANGELOG.md) · resume [CONTINUITY.md](CONTINUITY.md)
 
@@ -21,6 +21,7 @@
 | Voice in/out first-class | Yes | Settings → Voice · 🎤/🔊 · `voice_settings` · soft-degrade · 1.27.84 |
 | Native OpenAI tool_calls + role:tool | Yes | Settings toggle · `native_tool_calls` · dual-path · 1.27.86 |
 | Multi-model compare / arena | Yes | Chat **Compare** chip · `multimodel` · 2–3 parallel text replies · 1.27.87 |
+| `#` doc + URL inject | Yes | Composer `#token` · `hash_inject` · knowledge/file/URL · soft-degrade · 1.27.88 |
 | Launch always-visible (no stuck hide) | Yes | theme pre-apply · force deiconify · no alpha-0 |
 | Browser headless→headed anti-bot fallback | Yes | `browser_tool` · captcha wait |
 | Perchance image path (portable Chromium) | Yes | `perchance_image` · may still hit site anti-bot |

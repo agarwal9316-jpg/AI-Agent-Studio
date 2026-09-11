@@ -65,6 +65,7 @@ CHAT_COACH_LINES: list[str] = [
     "Type like a text message. Press Enter to send · Shift+Enter for a new line.",
     "Green “Send message” starts the AI. “Stop” cancels if it is taking too long.",
     "Attach a file with 📎 · Search the web with 🔍 · Make an image with 🖼.",
+    "Type #filename or #https://… to inject a doc/URL into this turn.",
     "Chip “Can use tools ✓” means the AI can help with files and the web.",
     "Left menu: Start · Talk to AI · AI Team · My AIs · Activity.",
 ]
@@ -72,7 +73,7 @@ CHAT_COACH_LINES: list[str] = [
 # Page-specific one-liners (status or coach)
 PAGE_TIPS: dict[str, str] = {
     "Home": "Pick one big green button. Connect first if you see the yellow warning.",
-    "Chat": "Type below and press Send message. Starters fill the box for you.",
+    "Chat": "Type below and press Send. Use #filename or #https://… to pull docs/URLs into context.",
     "Team": "New goal → write what you want → Start team → read the finished answer.",
     "Models": "Tap Make my AI now. You do not need expert tools.",
     "Monitor": "Shows recent activity. Green / no warnings means things are fine.",
@@ -133,6 +134,7 @@ Chat extras (optional)
   Ctrl+M         Microphone
   Ctrl+N         New chat
   Ctrl+K         Jump menu (expert)
+  #doc / #url    Pull a knowledge file, path, or URL into this turn
 """
 
 

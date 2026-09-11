@@ -25,7 +25,7 @@ from app.core.services.misc.user_guide import PAGE_TIPS, page_tip
 # Reuse the friendly per-page tips and extend with pages that have none yet.
 PAGE_DESCRIPTIONS: dict[str, str] = {
     "Home": PAGE_TIPS.get("Home", "Start here: connect your AI account and pick a main job."),
-    "Chat": PAGE_TIPS.get("Chat", "Chat like WhatsApp. The AI can search the web, open files, and help on this PC."),
+    "Chat": PAGE_TIPS.get("Chat", "Chat like WhatsApp. Use #doc or #https://… to inject files/URLs. The AI can search the web and open files."),
     "Help": PAGE_TIPS.get("Help", "Short guides in plain English. F2 opens this too."),
     "Chats": "Manage your saved conversations: rename, pin, delete, or start a new one.",
     "Knowledge": PAGE_TIPS.get(

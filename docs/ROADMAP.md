@@ -30,6 +30,7 @@
 - [x] Work board  
 - [x] Structured OpenAI tool-calls (JSON) alongside text blocks (1.27.86)  
 - [x] Multi-model parallel chat / arena Compare (1.27.87)  
+- [x] `#` doc + URL inject into chat context (1.27.88)  
 - [ ] Filesystem sandbox profiles  
 - [ ] Virtualized long chat history  
 - [ ] Keep docs/ in sync on every release (process)  

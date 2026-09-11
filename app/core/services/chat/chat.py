@@ -995,6 +995,30 @@ def send_user_message(
     except Exception:  # noqa: BLE001
         pass
 
+    # P0.3: `#` doc + URL inject (OWUI habit — soft-degrade unknowns)
+    try:
+        from app.core.services.chat.hash_inject import build_hash_inject_block
+        from app.paths import app_root as _app_root_hi
+
+        _hi_cwd = Path(terminal_cwd) if terminal_cwd else _app_root_hi()
+        hash_block, hash_res = build_hash_inject_block(
+            user_text or content,
+            cwd=_hi_cwd,
+        )
+        if hash_block:
+            full_system = full_system + "\n\n" + hash_block
+            try:
+                n_ok = sum(1 for r in hash_res if r.get("ok"))
+                n_miss = len(hash_res) - n_ok
+                _prep(
+                    f"Hash inject · {n_ok} loaded"
+                    + (f", {n_miss} unresolved" if n_miss else "")
+                )
+            except Exception:  # noqa: BLE001
+                pass
+    except Exception:  # noqa: BLE001
+        pass
+
     # SessionStart hooks
     try:
         agent_hooks.run_hooks("SessionStart", payload={"mode": mode, "user": (user_text or "")[:200]})

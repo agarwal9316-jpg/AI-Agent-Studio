@@ -280,3 +280,16 @@ Host-only elsewhere: spawn_subagent, .rhai workflows — use closest alternative
 
 Do not enable Action-mode tool loops while Compare is active.
 
+## `#` hash inject (composer) — context only
+
+**Hash inject** (v1.27.88+): type `#filename`, `#./path`, or `#https://…` in the user message.
+
+| Rule | Why |
+|------|-----|
+| Knowledge / file / URL resolved before the LLM call | Content is already in system context for this turn |
+| Truncated + cited | Avoid blowing the context window |
+| Soft-degrade unknown `#foo` | Send never crashes; a clear unresolved note is injected |
+| Not a tool block | No `<<<…>>>` — composer syntax only (extends RAG / web_fetch helpers) |
+
+Syntax examples: `#notes.md` · `#C:\\Docs\\spec.pdf` · `#./README.md` · `#https://example.com/page`
+
