@@ -21,6 +21,7 @@
 | Voice in/out first-class | Yes | Settings → Voice · 🎤/🔊 · `voice_settings` · soft-degrade · 1.27.84 |
 | Better voice (Whisper STT + OpenAI/ElevenLabs TTS) | Yes | Engine pickers · Test STT/TTS · Studio API key · local soft-degrade · 1.27.94 |
 | Artifacts persistent store (Saved library) | Yes | Live → Artifacts This turn/Saved · `artifacts_store` · `data/artifacts/` · save/open/reveal/export/delete/search · soft-degrade · 1.27.95 |
+| Virtualized long chat history | Yes | Sliding window (50/max 200) · Load older/newer · soft-degrade short chats · `virt_chat` · 1.27.97 |
 | Filesystem sandbox profiles | Yes | Settings → Agent harness · Read-only workspace / Project-only / Full disk with ask · custom roots · file+shell enforce · `agent_harness.sandbox` · 1.27.96 |
 | Native OpenAI tool_calls + role:tool | Yes | Settings toggle · `native_tool_calls` · dual-path · 1.27.86 |
 | Multi-model compare / arena | Yes | Chat **Compare** chip · `multimodel` · 2–3 parallel text replies · 1.27.87 |
@@ -58,7 +59,7 @@
 | Token meta on bubbles | Yes | prompt→completion tokens when available |
 | Consistent page headers | Yes | Work · Approvals · Knowledge · Settings · Agents · … |
 | Markdown tables + nested lists | Yes | Chat bubbles |
-| Virtualized chat history | Yes | Last 50 items · Load older (+40) · Show all |
+| Virtualized chat history | Yes | Sliding window last 50 · max 200 · Load older/newer (+40) · From start · ↓ Latest · no full rebuild on stream · 1.27.97 |
 | Help / How-to guide | Yes | Sidebar **Help** · F2 · Home checklist |
 | Chat coach bar | Yes | Tips until Dismiss · re-enable from Help/Home |
 | Empty-chat guide | Yes | Numbered steps + starter chips |

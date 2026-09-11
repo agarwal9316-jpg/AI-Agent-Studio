@@ -1,6 +1,6 @@
 # Continuity — resume without chat history
 
-**Head:** 1.27.96 — Filesystem sandbox profiles (branch `feat/roadmap-sandbox-profiles`).
+**Head:** 1.27.97 — Virtualized long chat history (branch `feat/roadmap-virt-chat`).
 
 
 **Goal:** After months, open the project folder and continue.
@@ -25,7 +25,8 @@
 
 ## Resume here (update every release)
 
-- **Last version:** **1.27.96** (Filesystem sandbox profiles — Read-only workspace / Project-only / Full disk with ask; custom roots; file+shell enforce)
+- **Last version:** **1.27.97** (Virtualized long chat history — sliding window 50/max 200; Load older/newer; soft-degrade; no stream full-rebuild)
+- **Prior:** **1.27.96** (Filesystem sandbox profiles — Read-only workspace / Project-only / Full disk with ask; custom roots; file+shell enforce)
 - **Prior:** **1.27.95** (P2.2 Artifacts persistent store — Live Artifacts This turn/Saved; `data/artifacts/`; soft-degrade)
 - **Recent (1.27.7–1.27.34):**
   - Chat delete reliability + title repair; **OS-only** min/max/close (no duplicate chrome)

@@ -278,7 +278,11 @@ class AppWindow(ctk.CTk):
         self._auto_error_retries = 0
         self._task_watch_started = False
         self._task_cycle_running = False
-        self._chat_history_window = 80
+        # Virtualized transcript window (sliding); None → jump_latest on first paint
+        self._chat_virt_start: int | None = None
+        self._chat_virt_end: int | None = None
+        # Legacy alias kept for any stray reads (size of painted window)
+        self._chat_history_window = 50
         self._chat_state = self._load_active_chat()
         # Clear zombie agent runs left as "running" after crashes / hung sends
         try:
@@ -6448,6 +6452,10 @@ class AppWindow(ctk.CTk):
         try:
             chat_store.set_active_chat_id(chat_id)
             self._chat_state = self._load_active_chat()
+            try:
+                self._chat_reset_virt_window()
+            except Exception:  # noqa: BLE001
+                pass
             # Keep multi-tab strip in sync
             tabs = list(getattr(self, "_open_chat_tabs", []) or [])
             if chat_id not in tabs:
@@ -12696,30 +12704,80 @@ class AppWindow(ctk.CTk):
         except Exception:  # noqa: BLE001
             return 0
 
+    def _chat_reset_virt_window(self) -> None:
+        """Reset sliding window to end-aligned default (chat switch / jump latest)."""
+        self._chat_virt_start = None
+        self._chat_virt_end = None
+        try:
+            from app.core.services.chat import virt_chat as _vc
+
+            self._chat_history_window = int(_vc.DEFAULT_WINDOW)
+        except Exception:  # noqa: BLE001
+            self._chat_history_window = 50
+
+    def _chat_sync_virt_meta(self, start: int, end: int) -> None:
+        self._chat_virt_start = int(start)
+        self._chat_virt_end = int(end)
+        self._chat_history_window = max(0, int(end) - int(start))
+
     def _chat_load_older_messages(self) -> None:
-        """Paint more stored messages above the current tail."""
+        """Slide/grow the painted window toward older messages (capped)."""
+        from app.core.services.chat import virt_chat as vc
+
         total = self._chat_stored_count()
-        cur = int(getattr(self, "_chat_history_window", 80) or 80)
-        nxt = min(max(total, 80), cur + 120)
-        if nxt <= cur and cur >= total:
-            self.set_status("Already showing the full chat", toast=True)
+        start, end = vc.ensure_window(
+            getattr(self, "_chat_virt_start", None),
+            getattr(self, "_chat_virt_end", None),
+            total,
+        )
+        new_s, new_e, changed = vc.load_older(start, end, total)
+        if not changed:
+            self.set_status("Already at the start of this chat", toast=True)
             return
-        self._chat_history_window = nxt
+        self._chat_sync_virt_meta(new_s, new_e)
         self._chat_user_pinned_bottom = False
         self._chat_render_transcript()
         try:
             self.after(40, self._chat_scroll_to_start)
         except Exception:  # noqa: BLE001
             pass
-        self.set_status(f"Showing last {self._chat_history_window} of {total} messages", toast=True)
+        self.set_status(vc.status_label(new_s, new_e, total), toast=True)
+
+    def _chat_load_newer_messages(self) -> None:
+        """Slide the painted window toward newer messages (capped)."""
+        from app.core.services.chat import virt_chat as vc
+
+        total = self._chat_stored_count()
+        start, end = vc.ensure_window(
+            getattr(self, "_chat_virt_start", None),
+            getattr(self, "_chat_virt_end", None),
+            total,
+        )
+        new_s, new_e, changed = vc.load_newer(start, end, total)
+        if not changed:
+            self.set_status("Already at the latest messages", toast=True)
+            return
+        self._chat_sync_virt_meta(new_s, new_e)
+        # If we reached the end, pin to bottom; else stay put
+        self._chat_user_pinned_bottom = vc.newer_count(new_e, total) == 0
+        self._chat_render_transcript()
+        if self._chat_user_pinned_bottom:
+            try:
+                self.after(40, lambda: self._chat_scroll_to_end(force=True))
+            except Exception:  # noqa: BLE001
+                pass
+        self.set_status(vc.status_label(new_s, new_e, total), toast=True)
 
     def _chat_show_all_messages(self) -> None:
         self._chat_show_from_start()
 
     def _chat_show_from_start(self) -> None:
-        """Paint from the first stored message and jump to the top."""
-        total = max(self._chat_stored_count(), 1)
-        self._chat_history_window = total
+        """Paint from message 1 within the sliding max; jump to the top."""
+        from app.core.services.chat import virt_chat as vc
+
+        total = self._chat_stored_count()
+        start, end = vc.show_from_start(total)
+        self._chat_sync_virt_meta(start, end)
         self._chat_user_pinned_bottom = False
         self._chat_render_transcript()
         try:
@@ -12727,7 +12785,22 @@ class AppWindow(ctk.CTk):
             self.after(160, self._chat_scroll_to_start)
         except Exception:  # noqa: BLE001
             pass
-        self.set_status(f"Full chat from the start ({total} messages)", toast=True)
+        self.set_status(vc.status_label(start, end, total), toast=True)
+
+    def _chat_jump_latest(self) -> None:
+        """↓ Latest: reset sliding window to the end and scroll down."""
+        from app.core.services.chat import virt_chat as vc
+
+        total = self._chat_stored_count()
+        start, end = vc.jump_latest(total)
+        self._chat_sync_virt_meta(start, end)
+        self._chat_user_pinned_bottom = True
+        self._chat_render_transcript()
+        try:
+            self._chat_scroll_to_end(force=True)
+        except Exception:  # noqa: BLE001
+            pass
+        self.set_status(vc.status_label(start, end, total), toast=True)
 
     def _chat_scroll_to_start(self) -> None:
         try:
@@ -12745,6 +12818,7 @@ class AppWindow(ctk.CTk):
             return
         try:
             import time as _time
+            from app.core.services.chat import virt_chat as vc
 
             now = _time.monotonic()
             last = float(getattr(self, "_chat_load_older_ts", 0) or 0)
@@ -12753,15 +12827,21 @@ class AppWindow(ctk.CTk):
             c = self._chat_canvas()
             if c is None:
                 return
-            y0, _y1 = c.yview()
-            if float(y0) > 0.02:
-                return
+            y0, y1 = c.yview()
             total = self._chat_stored_count()
-            win = int(getattr(self, "_chat_history_window", 80) or 80)
-            if win >= total:
+            start, end = vc.ensure_window(
+                getattr(self, "_chat_virt_start", None),
+                getattr(self, "_chat_virt_end", None),
+                total,
+            )
+            # Near top → load older; near bottom with newer hidden → load newer
+            if float(y0) <= 0.02 and vc.older_count(start) > 0:
+                self._chat_load_older_ts = now
+                self._chat_load_older_messages()
                 return
-            self._chat_load_older_ts = now
-            self._chat_load_older_messages()
+            if float(y1) >= 0.98 and vc.newer_count(end, total) > 0:
+                self._chat_load_older_ts = now
+                self._chat_load_newer_messages()
         except Exception:  # noqa: BLE001
             pass
 
@@ -13023,7 +13103,7 @@ class AppWindow(ctk.CTk):
                 width=100,
                 height=30,
                 corner_radius=15,
-                command=lambda: self._chat_scroll_to_end(force=True),
+                command=self._chat_jump_latest,
                 **style_chrome_button(primary=True),
             )
             self._jump_latest_btn.place(relx=0.5, rely=0.97, anchor="s")
@@ -13602,18 +13682,32 @@ class AppWindow(ctk.CTk):
                 saved_yview = None
 
         busy = bool(getattr(self, "_chat_busy", False))
-        # Never mutate the stored history here. Paint a growing tail so "From start"
-        # can reach message 1 (hard-coded last-80 used to hide the inception).
+        # Sliding painted window (virt_chat). Soft-degrades for short chats;
+        # busy path uses a light tail without mutating persisted virt state.
+        # Stream tokens update one bubble in place — do not call this every tick.
+        from app.core.services.chat import virt_chat as vc
+
         stored = list(self._chat_state.get("messages") or [])
         total_stored = len(stored)
         if busy:
-            tail_n = 36
+            win_start, win_end = vc.busy_tail(total_stored)
         else:
-            tail_n = int(getattr(self, "_chat_history_window", 80) or 80)
-            tail_n = max(20, min(max(total_stored, 20), tail_n))
-        all_messages = stored[-tail_n:] if total_stored > tail_n else list(stored)
-        older_stored = max(0, total_stored - len(all_messages))
-        if not busy and tail_n <= 160:
+            win_start, win_end = vc.ensure_window(
+                getattr(self, "_chat_virt_start", None),
+                getattr(self, "_chat_virt_end", None),
+                total_stored,
+            )
+            # If following the live end, keep the window end-aligned as messages grow
+            if bool(getattr(self, "_chat_user_pinned_bottom", True)) and vc.newer_count(
+                win_end, total_stored
+            ):
+                win_start, win_end = vc.jump_latest(total_stored)
+            self._chat_sync_virt_meta(win_start, win_end)
+        all_messages = vc.slice_messages(stored, win_start, win_end)
+        older_stored = vc.older_count(win_start)
+        newer_stored = vc.newer_count(win_end, total_stored)
+        # Media enrich only for modest windows (avoid O(n) on huge paints)
+        if not busy and vc.window_size(win_start, win_end) <= 160:
             try:
                 from app.core.services.chat.media_chat import enrich_message_with_media
                 from app.core.services.chat.chat_store import get_active_chat_id
@@ -13815,18 +13909,12 @@ class AppWindow(ctk.CTk):
 
         visible_items = display_items
 
-        if older_stored or (not busy and total_stored > 80):
+        if (not busy) and vc.needs_load_chrome(win_start, win_end, total_stored):
             from app.ui.themes import style_chrome_button, UI as _UI
 
             load_bar = ctk.CTkFrame(self.chat_scroll, fg_color="transparent")
             load_bar.pack(fill="x", padx=16, pady=(10, 6))
-            if older_stored:
-                label = (
-                    f"Showing last {len(all_messages)} of {total_stored} messages "
-                    f"({older_stored} older)"
-                )
-            else:
-                label = f"Showing all {total_stored} messages from the start"
+            label = vc.status_label(win_start, win_end, total_stored)
             ctk.CTkLabel(
                 load_bar,
                 text=label,
@@ -13836,10 +13924,19 @@ class AppWindow(ctk.CTk):
             if older_stored:
                 ctk.CTkButton(
                     load_bar,
-                    text="Load older (+120)",
+                    text=f"Load older (+{vc.LOAD_STEP})",
                     width=140,
                     height=28,
                     command=self._chat_load_older_messages,
+                    **style_chrome_button(primary=True),
+                ).pack(side="left", padx=4)
+            if newer_stored:
+                ctk.CTkButton(
+                    load_bar,
+                    text=f"Load newer (+{vc.LOAD_STEP})",
+                    width=140,
+                    height=28,
+                    command=self._chat_load_newer_messages,
                     **style_chrome_button(primary=True),
                 ).pack(side="left", padx=4)
             ctk.CTkButton(
@@ -13850,6 +13947,15 @@ class AppWindow(ctk.CTk):
                 command=self._chat_show_from_start,
                 **style_chrome_button(primary=bool(older_stored)),
             ).pack(side="left", padx=4)
+            if older_stored or newer_stored:
+                ctk.CTkButton(
+                    load_bar,
+                    text="↓ Latest",
+                    width=90,
+                    height=28,
+                    command=self._chat_jump_latest,
+                    **style_chrome_button(primary=bool(newer_stored)),
+                ).pack(side="left", padx=4)
 
         for item_kind, payload in visible_items:
             if item_kind == "file_edits":
@@ -15568,8 +15674,16 @@ class AppWindow(ctk.CTk):
         self._composer_is_placeholder = False
         if getattr(self, "_chat_state", None) is not None:
             self._chat_state["draft"] = ""
-        # New send: pin to bottom like Grok when you submit
+        # New send: pin to bottom like Grok when you submit + end-align virt window
         self._chat_user_pinned_bottom = True
+        try:
+            from app.core.services.chat import virt_chat as _vc
+
+            total = self._chat_stored_count()
+            s, e = _vc.jump_latest(total)
+            self._chat_sync_virt_meta(s, e)
+        except Exception:  # noqa: BLE001
+            pass
         # Live / Thinking / Terminal is the monitor — always open on send so dumps
         # never have to live in the answer bubble.
         try:

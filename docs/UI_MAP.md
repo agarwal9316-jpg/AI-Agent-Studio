@@ -59,6 +59,7 @@ Chat · Home · Agents · Tasks · Runs · Chats · Memory · Projects · Compan
 ### Row 3 — Messages
 
 - Scrollable transcript (Grok-like bubbles)
+- **Virtualized history (1.27.97):** sliding window last 50 / max 200; Load older · Load newer (+40); From start; ↓ Latest FAB; short chats unchanged; stream updates one bubble in place (`virt_chat`)
 - Optional **Live** side panel: Activity \| Agents
 - Streaming updates in-place (less flicker)
 - Message actions: Copy / Edit / Reply / Regen

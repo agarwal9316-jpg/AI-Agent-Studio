@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current:** v1.27.96 — Cockpit + Models/Train lab + Mission Control + Team multi-AI.
+**Current:** v1.27.97 — Cockpit + Models/Train lab + Mission Control + Team multi-AI.
 
 ---
 
@@ -39,7 +39,7 @@
 - [x] Better voice — Whisper STT + OpenAI/ElevenLabs TTS (1.27.94)  
 - [x] Artifacts persistent store — Saved library under data/artifacts/ (1.27.95)  
 - [x] Filesystem sandbox profiles (1.27.96)  
-- [ ] Virtualized long chat history  
+- [x] Virtualized long chat history (1.27.97)  
 - [ ] Keep docs/ in sync on every release (process)  
 
 ---
