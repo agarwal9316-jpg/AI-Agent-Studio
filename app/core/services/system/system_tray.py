@@ -111,9 +111,17 @@ def _emit(name: str) -> None:
 
 
 def _icon_image():
-    """Build a simple tray icon (Pillow). Prefer assets/tray_icon.png if present."""
+    """Build a simple tray icon (Pillow). Prefer branding pack, then assets/tray_icon.png."""
     from PIL import Image, ImageDraw
 
+    try:
+        from app.core.services.system import branding as _branding
+
+        branded = _branding.tray_icon_path()
+        if branded is not None and branded.is_file():
+            return Image.open(branded).convert("RGBA")
+    except Exception:  # noqa: BLE001
+        pass
     assets = app_root() / "assets" / "tray_icon.png"
     if assets.is_file():
         try:

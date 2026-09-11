@@ -1,6 +1,6 @@
 # Continuity — resume without chat history
 
-**Head:** 1.28.1 — Code signing pipeline for portable exe (branch `feat/roadmap-code-signing`).
+**Head:** 1.28.2 — Optional icons / branding pack (branch `feat/roadmap-branding`).
 
 
 **Goal:** After months, open the project folder and continue.
@@ -25,7 +25,8 @@
 
 ## Resume here (update every release)
 
-- **Last version:** **1.28.1** (Code signing pipeline — `sign_portable.ps1`/`.sh` + `docs/CODE_SIGNING.md`; cert user-provided; self-signed DEV only)
+- **Last version:** **1.28.2** (Optional branding pack — `assets/branding/` + `branding` loader; window/About/Home; `docs/BRANDING.md`)
+- **Prior:** **1.28.1** (Code signing pipeline — `sign_portable.ps1`/`.sh` + `docs/CODE_SIGNING.md`; cert user-provided; self-signed DEV only)
 - **Prior:** **1.28.0** (Richer flow canvas — Org chart ↔ Flow canvas toggle; nodes/edges pan/zoom/link; persist with workflow store; soft-degrade)
 - **Prior:** **1.27.99** (Studio bundle export/import — portable data zip; secrets redacted by default; Settings+About; merge/replace)
 - **Prior:** **1.27.98** (Docs sync process — `scripts/check_docs_sync.py` + RELEASE checklist; enforced VERSION trio / CHANGELOG / CONTINUITY / FEATURES)

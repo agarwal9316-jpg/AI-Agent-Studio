@@ -4,7 +4,7 @@ Portable **Windows GUI** for multi-agent chat, company workflows, tools, and loc
 
 Inspired by AutoGen / CrewAI / Dify / Langflow for **patterns only** — original software, **not a clone**.
 
-**Version:** 1.27.81 (see `app/version.py` · [docs/CHANGELOG.md](docs/CHANGELOG.md)) · [GitHub Releases](https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases)  
+**Version:** 1.28.2 (see `app/version.py` · [docs/CHANGELOG.md](docs/CHANGELOG.md)) · [GitHub Releases](https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases)  
 
 
 ---
@@ -15,7 +15,7 @@ Inspired by AutoGen / CrewAI / Dify / Langflow for **patterns only** — origina
 2. Unzip a release or clone this repo.
 3. Double-click **`Start.bat`** (or `Launch.bat`).
    - First run creates `.venv`, installs `requirements.txt`, and installs portable Chromium into `./browsers`.
-4. Optional portable EXE: run `build_portable.ps1`, then `Launch_Portable.bat`. Optional Authenticode sign: [docs/CODE_SIGNING.md](docs/CODE_SIGNING.md) (user-provided cert; self-signed = DEV ONLY).
+4. Optional portable EXE: run `build_portable.ps1`, then `Launch_Portable.bat`. Optional Authenticode sign: [docs/CODE_SIGNING.md](docs/CODE_SIGNING.md) (user-provided cert; self-signed = DEV ONLY). Optional icons: [docs/BRANDING.md](docs/BRANDING.md).
 
 ## Android companion
 

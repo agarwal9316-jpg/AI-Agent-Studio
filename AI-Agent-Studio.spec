@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_all
 
-datas = []
+datas = [('assets/branding', 'assets/branding')]
 binaries = []
 hiddenimports = ['app', 'app.main', 'app.ui.app_window', 'app.services.storage', 'app.services.runner', 'app.services.llm', 'app.services.chat', 'app.services.attachments', 'app.services.terminal_tool']
 tmp_ret = collect_all('customtkinter')
@@ -39,6 +39,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon='assets/branding/app_icon.ico',
 )
 coll = COLLECT(
     exe,

@@ -31,6 +31,7 @@ from app.core.services.system import clipboard_watch
 from app.core.services.system import file_watcher
 from app.core.services.system import global_hotkeys
 from app.core.services.system import system_tray
+from app.core.services.system import branding
 from app.core.services.system import scheduler_service
 from app.core.services.company import team_bg
 from app.core.services.company import team_channel
@@ -87,6 +88,7 @@ __all__ = [
     "file_watcher",
     "global_hotkeys",
     "system_tray",
+    "branding",
     "scheduler_service",
     "team_bg",
     "team_channel",

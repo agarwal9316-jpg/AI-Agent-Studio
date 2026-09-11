@@ -1,7 +1,7 @@
 {
   "name": "AI Agent Studio",
-  "version": "1.28.1",
-  "notes": "Code signing pipeline for portable exe \u2014 scripts + docs; cert is user-provided; optional self-signed DEV path (NOT for distribution trust)",
+  "version": "1.28.2",
+  "notes": "Optional icons / branding pack \u2014 assets/branding (PNG/SVG/ICO), window/About/Home soft-degrade; docs/BRANDING.md",
   "download_url": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/latest",
   "source": "github"
 }

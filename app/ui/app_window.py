@@ -210,6 +210,12 @@ class AppWindow(ctk.CTk):
 
         self.title(f"{APP_NAME}  v{__version__}")
         try:
+            from app.core.services.system import branding as _branding
+
+            _branding.apply_window_icon(self)
+        except Exception:  # noqa: BLE001
+            pass
+        try:
             from app.core.services.llm.providers import ensure_builtin_providers, resolve_active_llm
 
             ensure_builtin_providers()
@@ -3505,6 +3511,18 @@ class AppWindow(ctk.CTk):
         # Title
         hero = ctk.CTkFrame(frame, **style_card())
         hero.grid(row=0, column=0, sticky="ew", pady=(0, 14))
+        # Optional branding pack — Home brand mark (soft-degrade if missing)
+        try:
+            from app.core.services.system import branding as _branding
+
+            _home_mark = _branding.ctk_brand_image(48)
+            if _home_mark is not None:
+                self._home_brand_image = _home_mark
+                ctk.CTkLabel(hero, text="", image=_home_mark).pack(
+                    anchor="w", padx=20, pady=(16, 0)
+                )
+        except Exception:  # noqa: BLE001
+            pass
         ctk.CTkLabel(
             hero,
             text="Welcome — pick one thing to do",
@@ -18501,14 +18519,58 @@ class AppWindow(ctk.CTk):
             side="left", padx=12
         )
 
+        # Brand accent swatch + optional branding pack status (Appearance)
+        brand_row = ctk.CTkFrame(frame, fg_color="transparent")
+        brand_row.grid(row=6, column=0, sticky="ew", pady=(2, 4))
+        try:
+            from app.ui.themes import UI as _BRAND_UI
+            from app.core.services.system import branding as _branding
+
+            swatch = ctk.CTkFrame(
+                brand_row,
+                width=18,
+                height=18,
+                corner_radius=4,
+                fg_color=_BRAND_UI.get("brand_bar", ("#2563eb", "#3b82f6")),
+            )
+            swatch.pack(side="left", padx=(8, 6), pady=2)
+            swatch.pack_propagate(False)
+            ctk.CTkLabel(
+                brand_row,
+                text="Brand accent",
+                text_color=_HC_LABEL,
+                font=ctk.CTkFont(size=12, weight="bold"),
+            ).pack(side="left", padx=(0, 8))
+            st = _branding.status()
+            pack_txt = (
+                "Branding pack ON · assets/branding/ (window icon · About logo · Home mark)"
+                if st.get("present")
+                else "Branding pack optional — drop icons in assets/branding/ (docs/BRANDING.md)"
+            )
+            ctk.CTkLabel(
+                brand_row,
+                text=pack_txt,
+                text_color=_HC_MUTED,
+                font=ctk.CTkFont(size=11),
+                wraplength=560,
+                justify="left",
+            ).pack(side="left", padx=4)
+        except Exception:  # noqa: BLE001
+            ctk.CTkLabel(
+                brand_row,
+                text="Brand accent · branding pack optional (docs/BRANDING.md)",
+                text_color=_HC_MUTED,
+                font=ctk.CTkFont(size=11),
+            ).pack(side="left", padx=8)
+
         ctk.CTkLabel(
             frame,
             text="Chat & safety",
             font=ctk.CTkFont(size=14, weight="bold"),
             text_color=_HC_LABEL,
-        ).grid(row=6, column=0, sticky="w", pady=(8, 2))
+        ).grid(row=7, column=0, sticky="w", pady=(8, 2))
         opts = ctk.CTkFrame(frame)
-        opts.grid(row=7, column=0, sticky="ew", pady=6)
+        opts.grid(row=8, column=0, sticky="ew", pady=6)
         cfg = self.cfg
         stream_var = ctk.BooleanVar(master=opts, value=bool(cfg.get("stream_replies", True)))
         auto_proj_var = ctk.BooleanVar(master=opts, value=bool(cfg.get("auto_save_results_to_project")))
@@ -18691,9 +18753,9 @@ class AppWindow(ctk.CTk):
                 text="Voice (mic in / read-aloud out)",
                 font=ctk.CTkFont(size=14, weight="bold"),
                 text_color=_HC_LABEL,
-            ).grid(row=8, column=0, sticky="w", pady=(8, 2))
+            ).grid(row=10, column=0, sticky="w", pady=(8, 2))
             voice_box = ctk.CTkFrame(frame)
-            voice_box.grid(row=9, column=0, sticky="ew", pady=6)
+            voice_box.grid(row=11, column=0, sticky="ew", pady=6)
             voice_mic_var = ctk.BooleanVar(master=voice_box, value=bool(cfg.get("voice_mic_enabled", True)))
             voice_tts_var = ctk.BooleanVar(master=voice_box, value=bool(cfg.get("voice_tts_enabled", True)))
             voice_auto_var = ctk.BooleanVar(master=voice_box, value=bool(cfg.get("voice_auto_read_aloud", False)))
@@ -19966,6 +20028,18 @@ class AppWindow(ctk.CTk):
 
         card = ctk.CTkFrame(frame, **style_card())
         card.grid(row=1, column=0, sticky="ew", pady=8)
+        # Optional branding pack — About logo (soft-degrade if missing)
+        try:
+            from app.core.services.system import branding as _branding
+
+            _about_logo = _branding.ctk_brand_image(64)
+            if _about_logo is not None:
+                self._about_brand_image = _about_logo
+                ctk.CTkLabel(card, text="", image=_about_logo).pack(
+                    anchor="w", padx=16, pady=(16, 4)
+                )
+        except Exception:  # noqa: BLE001
+            pass
         ctk.CTkLabel(
             card,
             justify="left",
