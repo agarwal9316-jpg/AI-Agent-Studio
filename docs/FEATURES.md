@@ -1,6 +1,6 @@
 # Feature inventory
 
-**Version:** 1.27.93  
+**Version:** 1.27.94  
 **Maintained here** (root `FEATURES.md` is a pointer).  
 **History:** [CHANGELOG.md](CHANGELOG.md) · resume [CONTINUITY.md](CONTINUITY.md)
 
@@ -19,6 +19,7 @@
 | Tool call audit log (export JSON/CSV) | Yes | `audit_log` · Settings · 1.27.82 |
 | Offline · Ollama (local) | Yes | Settings/Models · `ollama_local` · health + 11434 · 1.27.83 |
 | Voice in/out first-class | Yes | Settings → Voice · 🎤/🔊 · `voice_settings` · soft-degrade · 1.27.84 |
+| Better voice (Whisper STT + OpenAI/ElevenLabs TTS) | Yes | Engine pickers · Test STT/TTS · Studio API key · local soft-degrade · 1.27.94 |
 | Native OpenAI tool_calls + role:tool | Yes | Settings toggle · `native_tool_calls` · dual-path · 1.27.86 |
 | Multi-model compare / arena | Yes | Chat **Compare** chip · `multimodel` · 2–3 parallel text replies · 1.27.87 |
 | `#` doc + URL inject | Yes | Composer `#token` · `hash_inject` · knowledge/file/URL · soft-degrade · 1.27.88 |
@@ -122,7 +123,7 @@
 | Live browser | Yes | Persistent Chromium session: goto/click/fill/text/screenshot/links (headed optional) |
 | Clipboard smart attach | Yes | Background watch |
 | Continuous voice | Yes | 🎙 · Settings mic mode=toggle · 1.27.84 |
-| Mic STT + TTS speak | Yes | 🎤 / 🔊 / Ctrl+M · Settings Voice · 1.27.84 |
+| Mic STT + TTS speak | Yes | 🎤 / 🔊 / Ctrl+M · Settings Voice · engines local/openai/elevenlabs · 1.27.94 |
 | Screen OCR | Yes | OCR · `OCR` blocks |
 | Patch review | Yes | Patches page · `PATCH_REVIEW` |
 | Scheduled agents | Yes | Schedule page |

@@ -1,6 +1,6 @@
 # Continuity — resume without chat history
 
-**Head:** 1.27.93 — P1.4 Message queue while streaming (branch `feat/owui-p1-msgqueue`).
+**Head:** 1.27.94 — P2.1 Better voice (branch `feat/owui-p2-voice`).
 
 
 **Goal:** After months, open the project folder and continue.
@@ -25,7 +25,7 @@
 
 ## Resume here (update every release)
 
-- **Last version:** **1.27.93** (P1.4 Message queue while streaming — FIFO enqueue/auto-send; Stop keeps queue)
+- **Last version:** **1.27.94** (P2.1 Better voice — Whisper STT + OpenAI/ElevenLabs TTS; local soft-degrade)
 - **Recent (1.27.7–1.27.34):**
   - Chat delete reliability + title repair; **OS-only** min/max/close (no duplicate chrome)
   - **Org chart:** pan/drag view, expand/collapse teams, Reset → CEO top; continuous connectors; soft-select (no click flicker)

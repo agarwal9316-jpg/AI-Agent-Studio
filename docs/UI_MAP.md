@@ -1,7 +1,7 @@
 # UI Map
 
 **Toolkit:** CustomTkinter  
-**Version:** 1.27.93 (keep in sync with `app/version.py`)
+**Version:** 1.27.94 (keep in sync with `app/version.py`)
 
 ---
 
@@ -192,6 +192,13 @@ Separate from **Team** goal channels (`data/team_channels/`).
 | Clear queue | Drop all queued follow-ups |
 | Auto-send | On turn idle, dequeue next and send |
 | Stop | Cancels active run; **keeps** queue (clear explicitly) |
+
+## Voice settings (1.27.94 / P2.1)
+
+Settings → **Voice**: mic/TTS toggles, mic mode (push_to_talk / toggle), language,
+**STT engine** (`local` | `openai_whisper`), **TTS engine** (`local` | `openai` | `elevenlabs`),
+TTS voice, optional ElevenLabs API key, **Test STT** / **Test TTS**.
+Chat composer 🎤 / 🔊 and auto-read-aloud use the selected engines; soft-degrade to local.
 
 ## Automations page (1.27.92)
 

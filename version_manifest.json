@@ -1,7 +1,7 @@
 {
   "name": "AI Agent Studio",
-  "version": "1.27.93",
-  "notes": "P1.4 Message queue while streaming \u2014 enqueue follow-ups during generate; FIFO auto-send on idle; Stop keeps queue; chips under composer",
+  "version": "1.27.94",
+  "notes": "P2.1 Better voice \u2014 OpenAI Whisper STT + OpenAI/ElevenLabs TTS APIs; local soft-degrade; Settings engine pickers + Test STT/TTS",
   "download_url": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/latest",
   "source": "github"
 }

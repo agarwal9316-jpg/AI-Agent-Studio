@@ -18326,17 +18326,22 @@ class AppWindow(ctk.CTk):
         except Exception:  # noqa: BLE001
             pass
 
-        # PENDING #18: Voice in/out (soft-degrade if deps missing)
+        # PENDING #18 / P2.1: Voice in/out multi-provider (soft-degrade if deps missing)
         voice_mic_var = None
         voice_tts_var = None
         voice_auto_var = None
         voice_mode_var = None
         voice_lang_var = None
+        voice_stt_engine_var = None
+        voice_tts_engine_var = None
+        voice_tts_voice_var = None
+        voice_eleven_key_e = None
+        voice_status_lbl = None
         try:
             from app.core.services.ai import voice_settings as _vs
             from app.core.services.ai.stt_service import stt_capability as _stt_cap
             from app.core.services.ai.tts_service import tts_capability as _tts_cap
-            
+
             _vs.ensure_defaults(cfg)
             ctk.CTkLabel(
                 frame,
@@ -18354,6 +18359,17 @@ class AppWindow(ctk.CTk):
                 _mode_cur = "push_to_talk"
             voice_mode_var = ctk.StringVar(master=voice_box, value=_mode_cur)
             voice_lang_var = ctk.StringVar(master=voice_box, value=str(cfg.get("voice_language") or "en-US"))
+            _stt_eng = str(cfg.get("voice_stt_engine") or "local").lower()
+            if _stt_eng not in ("local", "openai_whisper"):
+                _stt_eng = "local"
+            _tts_eng = str(cfg.get("voice_tts_engine") or "local").lower()
+            if _tts_eng not in ("local", "openai", "elevenlabs"):
+                _tts_eng = "local"
+            voice_stt_engine_var = ctk.StringVar(master=voice_box, value=_stt_eng)
+            voice_tts_engine_var = ctk.StringVar(master=voice_box, value=_tts_eng)
+            voice_tts_voice_var = ctk.StringVar(
+                master=voice_box, value=str(cfg.get("voice_tts_voice") or "alloy")
+            )
             row_v1 = ctk.CTkFrame(voice_box, fg_color="transparent")
             row_v1.pack(fill="x", padx=8, pady=4)
             ctk.CTkSwitch(row_v1, text="Mic input in chat", variable=voice_mic_var).pack(side="left", padx=4)
@@ -18378,23 +18394,138 @@ class AppWindow(ctk.CTk):
             ).pack(side="left", padx=8)
             ctk.CTkLabel(row_v2, text="Language", text_color=_HC_LABEL).pack(side="left", padx=(12, 4))
             ctk.CTkEntry(row_v2, textvariable=voice_lang_var, width=90).pack(side="left", padx=4)
+            row_v3 = ctk.CTkFrame(voice_box, fg_color="transparent")
+            row_v3.pack(fill="x", padx=8, pady=4)
+            ctk.CTkLabel(row_v3, text="STT engine", text_color=_HC_LABEL).pack(side="left", padx=(4, 6))
+            ctk.CTkOptionMenu(
+                row_v3,
+                variable=voice_stt_engine_var,
+                values=["local", "openai_whisper"],
+                width=160,
+            ).pack(side="left", padx=4)
+            ctk.CTkLabel(row_v3, text="TTS engine", text_color=_HC_LABEL).pack(side="left", padx=(12, 6))
+            ctk.CTkOptionMenu(
+                row_v3,
+                variable=voice_tts_engine_var,
+                values=["local", "openai", "elevenlabs"],
+                width=140,
+            ).pack(side="left", padx=4)
+            ctk.CTkLabel(row_v3, text="TTS voice", text_color=_HC_LABEL).pack(side="left", padx=(12, 4))
+            ctk.CTkEntry(row_v3, textvariable=voice_tts_voice_var, width=90).pack(side="left", padx=4)
+            row_v4 = ctk.CTkFrame(voice_box, fg_color="transparent")
+            row_v4.pack(fill="x", padx=8, pady=4)
+            ctk.CTkLabel(row_v4, text="ElevenLabs key", text_color=_HC_LABEL).pack(side="left", padx=(4, 6))
+            voice_eleven_key_e = ctk.CTkEntry(
+                row_v4, width=280, placeholder_text="optional (TTS engine=elevenlabs)", show="*"
+            )
+            if cfg.get("voice_elevenlabs_api_key"):
+                voice_eleven_key_e.insert(0, str(cfg.get("voice_elevenlabs_api_key")))
+            voice_eleven_key_e.pack(side="left", padx=4)
+            ctk.CTkLabel(
+                row_v4,
+                text="OpenAI STT/TTS use Studio API key + base URL",
+                text_color=_HC_MUTED,
+                font=ctk.CTkFont(size=11),
+            ).pack(side="left", padx=8)
+
+            def _voice_refresh_status_lbl() -> None:
+                try:
+                    _stt = _stt_cap()
+                    _tts = _tts_cap()
+                    _stt_line = (
+                        f"STT [{_stt.get('selected') or '?'}]: "
+                        f"{'ready' if _stt.get('available') else 'unavailable'} — {_stt.get('detail') or ''}"
+                    )
+                    _tts_line = (
+                        f"TTS [{_tts.get('selected') or '?'}]: "
+                        f"{'ready' if _tts.get('available') else 'unavailable'} — {_tts.get('detail') or ''}"
+                    )
+                    if voice_status_lbl is not None:
+                        voice_status_lbl.configure(text=(_stt_line[:180] + "\n" + _tts_line[:180]))
+                except Exception:  # noqa: BLE001
+                    pass
+
+            def _voice_test_stt() -> None:
+                try:
+                    save_all_settings()
+                except Exception:  # noqa: BLE001
+                    pass
+                try:
+                    from app.core.services.ai.stt_service import listen_once as _listen
+
+                    self.set_status("Testing STT — speak now…")
+                    res = _listen(timeout=6.0, phrase_time_limit=12.0, language=str(voice_lang_var.get() or "en-US"))
+                    if res.get("ok"):
+                        messagebox.showinfo(
+                            "STT OK",
+                            f"Engine: {res.get('engine')}\nText: {res.get('text')}",
+                            parent=self,
+                        )
+                    else:
+                        err = res.get("error") or "STT failed"
+                        hint = res.get("hint") or ""
+                        messagebox.showerror(
+                            "STT failed",
+                            f"{err}" + (f"\n\n{hint}" if hint else ""),
+                            parent=self,
+                        )
+                    _voice_refresh_status_lbl()
+                except Exception as e:  # noqa: BLE001
+                    messagebox.showerror("STT failed", str(e), parent=self)
+
+            def _voice_test_tts() -> None:
+                try:
+                    save_all_settings()
+                except Exception:  # noqa: BLE001
+                    pass
+                try:
+                    from app.core.services.ai.tts_service import speak_text as _speak
+
+                    sample = "AI Agent Studio voice test. If you can hear this, TTS is working."
+                    res = _speak(sample, async_play=False)
+                    if res.get("ok"):
+                        messagebox.showinfo(
+                            "TTS OK",
+                            f"Engine: {res.get('engine')}"
+                            + (f"\nFallback from: {res.get('fallback_from')}" if res.get("fallback_from") else ""),
+                            parent=self,
+                        )
+                    else:
+                        err = res.get("error") or "TTS failed"
+                        hint = res.get("hint") or ""
+                        messagebox.showerror(
+                            "TTS failed",
+                            f"{err}" + (f"\n\n{hint}" if hint else ""),
+                            parent=self,
+                        )
+                    _voice_refresh_status_lbl()
+                except Exception as e:  # noqa: BLE001
+                    messagebox.showerror("TTS failed", str(e), parent=self)
+
+            row_v5 = ctk.CTkFrame(voice_box, fg_color="transparent")
+            row_v5.pack(fill="x", padx=8, pady=4)
+            ctk.CTkButton(row_v5, text="Test STT", width=100, command=_voice_test_stt).pack(side="left", padx=4)
+            ctk.CTkButton(row_v5, text="Test TTS", width=100, command=_voice_test_tts).pack(side="left", padx=4)
             _stt = _stt_cap()
             _tts = _tts_cap()
             _stt_line = (
-                f"STT: {'ready' if _stt.get('available') else 'unavailable'} — {_stt.get('detail') or ''}"
+                f"STT [{_stt.get('selected') or '?'}]: "
+                f"{'ready' if _stt.get('available') else 'unavailable'} — {_stt.get('detail') or ''}"
             )
             _tts_line = (
-                f"TTS: {'ready' if _tts.get('available') else 'unavailable'} — {_tts.get('detail') or ''}"
+                f"TTS [{_tts.get('selected') or '?'}]: "
+                f"{'ready' if _tts.get('available') else 'unavailable'} — {_tts.get('detail') or ''}"
             )
-            ctk.CTkLabel(
+            voice_status_lbl = ctk.CTkLabel(
                 voice_box,
-                text=_stt_line[:160] + "\n" + _tts_line[:160],
+                text=_stt_line[:180] + "\n" + _tts_line[:180],
                 text_color=_HC_MUTED,
                 justify="left",
                 anchor="w",
                 font=ctk.CTkFont(size=11),
-            ).pack(anchor="w", padx=12, pady=(2, 8))
-            
+            )
+            voice_status_lbl.pack(anchor="w", padx=12, pady=(2, 8))
+
         except Exception as _voice_ui_err:  # noqa: BLE001
             try:
                 ctk.CTkLabel(
@@ -18525,7 +18656,7 @@ class AppWindow(ctk.CTk):
             except Exception:  # noqa: BLE001
                 self.cfg["hybrid_rag_enabled"] = True
             self.cfg["self_improve_require_review"] = bool(si_review_var.get())
-            # Voice (#18)
+            # Voice (#18 / P2.1)
             try:
                 if voice_mic_var is not None:
                     self.cfg["voice_mic_enabled"] = bool(voice_mic_var.get())
@@ -18538,6 +18669,18 @@ class AppWindow(ctk.CTk):
                     self.cfg["voice_mic_mode"] = _vm if _vm in ("push_to_talk", "toggle") else "push_to_talk"
                 if voice_lang_var is not None:
                     self.cfg["voice_language"] = (voice_lang_var.get() or "en-US").strip() or "en-US"
+                if voice_stt_engine_var is not None:
+                    _se = str(voice_stt_engine_var.get() or "local").lower()
+                    self.cfg["voice_stt_engine"] = _se if _se in ("local", "openai_whisper") else "local"
+                if voice_tts_engine_var is not None:
+                    _te = str(voice_tts_engine_var.get() or "local").lower()
+                    self.cfg["voice_tts_engine"] = (
+                        _te if _te in ("local", "openai", "elevenlabs") else "local"
+                    )
+                if voice_tts_voice_var is not None:
+                    self.cfg["voice_tts_voice"] = (voice_tts_voice_var.get() or "alloy").strip() or "alloy"
+                if voice_eleven_key_e is not None:
+                    self.cfg["voice_elevenlabs_api_key"] = voice_eleven_key_e.get().strip()
             except Exception:  # noqa: BLE001
                 pass
             self.cfg["chat_density"] = dens_var.get() if dens_var.get() in ("compact", "comfortable") else "compact"

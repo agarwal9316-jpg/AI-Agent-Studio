@@ -36,6 +36,7 @@
 - [x] Channels (OWUI-inspired) — shared timeline + @model ask (1.27.91)  
 - [x] Automations — schedule prompts → linked chat (1.27.92)  
 - [x] Message queue while streaming (1.27.93)  
+- [x] Better voice — Whisper STT + OpenAI/ElevenLabs TTS (1.27.94)  
 - [ ] Filesystem sandbox profiles  
 - [ ] Virtualized long chat history  
 - [ ] Keep docs/ in sync on every release (process)  
