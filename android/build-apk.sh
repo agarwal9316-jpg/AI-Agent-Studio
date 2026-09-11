@@ -13,7 +13,7 @@ export PATH="$JAVA_HOME/bin:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME
 if [[ ! -f local.properties ]]; then
   echo "sdk.dir=$ANDROID_HOME" > local.properties
 fi
-VERSION_NAME="1.27.90"
+VERSION_NAME="1.27.93"
 chmod +x ./gradlew
 ./gradlew assembleDebug --no-daemon
 mkdir -p dist
