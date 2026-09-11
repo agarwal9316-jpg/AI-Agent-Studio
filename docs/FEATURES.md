@@ -1,6 +1,6 @@
 # Feature inventory
 
-**Version:** 1.27.83  
+**Version:** 1.27.84  
 **Maintained here** (root `FEATURES.md` is a pointer).  
 **History:** [CHANGELOG.md](CHANGELOG.md) · resume [CONTINUITY.md](CONTINUITY.md)
 
@@ -18,6 +18,7 @@
 | System tray + run in background | Yes | `system_tray` · Show/Hide/Quit · Settings · 1.27.81 |
 | Tool call audit log (export JSON/CSV) | Yes | `audit_log` · Settings · 1.27.82 |
 | Offline · Ollama (local) | Yes | Settings/Models · `ollama_local` · health + 11434 · 1.27.83 |
+| Voice in/out first-class | Yes | Settings → Voice · 🎤/🔊 · `voice_settings` · soft-degrade · 1.27.84 |
 | Launch always-visible (no stuck hide) | Yes | theme pre-apply · force deiconify · no alpha-0 |
 | Browser headless→headed anti-bot fallback | Yes | `browser_tool` · captcha wait |
 | Perchance image path (portable Chromium) | Yes | `perchance_image` · may still hit site anti-bot |
@@ -112,8 +113,8 @@
 | Web download | Yes | `WEB_DOWNLOAD` · files → data/browser_downloads |
 | Live browser | Yes | Persistent Chromium session: goto/click/fill/text/screenshot/links (headed optional) |
 | Clipboard smart attach | Yes | Background watch |
-| Continuous voice | Yes | 🎙 |
-| Mic STT | Yes | 🎤 / Ctrl+M |
+| Continuous voice | Yes | 🎙 · Settings mic mode=toggle · 1.27.84 |
+| Mic STT + TTS speak | Yes | 🎤 / 🔊 / Ctrl+M · Settings Voice · 1.27.84 |
 | Screen OCR | Yes | OCR · `OCR` blocks |
 | Patch review | Yes | Patches page · `PATCH_REVIEW` |
 | Scheduled agents | Yes | Schedule page |

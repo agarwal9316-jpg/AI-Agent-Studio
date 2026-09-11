@@ -4,8 +4,8 @@
 **Rule:** Execute **one task at a time** → test/debug → mark done → next.  
 **Status:** `pending` | `in_progress` | `done` | `blocked` | `skipped`
 
-Last updated: 2026-09-11 · App version: **1.27.83**  
-*(Tasks #1–15 done at 1.26.x; #16 audit log done at 1.27.82; #17 Offline Ollama done at 1.27.83; #19 tray done at 1.27.81. Next sequential task remains #18.)*
+Last updated: 2026-09-11 · App version: **1.27.84**  
+*(Tasks #1–15 done at 1.26.x; #16 audit log done at 1.27.82; #17 Offline Ollama done at 1.27.83; #18 Voice done at 1.27.84; #19 tray done at 1.27.81. Next sequential task is #20.)*
 
 ---
 
@@ -30,7 +30,7 @@ Last updated: 2026-09-11 · App version: **1.27.83**
 | 15 | Sandbox / cwd lock per chat | P1 | **done** | cwd lock 🔒 · 1.26.2 |
 | 16 | Export audit log of all tool calls | P1 | **done** | 1.27.82 · `audit_log` · Settings export JSON/CSV |
 | 17 | Offline Ollama path clearly labeled | P1 | **done** | 1.27.83 · `ollama_local` · Offline · Ollama (local) |
-| 18 | Voice in/out first-class | P2 | pending | Partial STT exists |
+| 18 | Voice in/out first-class | P2 | **done** | 1.27.84 · Settings Voice · mic/speak · soft-degrade |
 | 19 | System tray + run in background | P2 | **done** | 1.27.81 · pystray Show/Hide/Quit · start minimized |
 | 20 | Optional Grok CLI session reuse (if product/legal allows) | P2 | pending | Research first |
 
@@ -40,6 +40,7 @@ Last updated: 2026-09-11 · App version: **1.27.83**
 
 | # | Task | Version | Date |
 |---|------|---------|------|
+| 18 | Voice in/out first-class | 1.27.84 | 2026-09-11 |
 | 17 | Offline Ollama path clearly labeled | 1.27.83 | 2026-09-11 |
 | 19 | System tray + run in background | 1.27.81 | 2026-09-11 |
 | 16 | Export audit log of all tool calls | 1.27.82 | 2026-09-11 |
@@ -59,9 +60,9 @@ Last updated: 2026-09-11 · App version: **1.27.83**
 
 ## Current focus
 
-**Next sequential task:** **#18** — Voice in/out first-class.
+**Next sequential task:** **#20** — Optional Grok CLI session reuse (research first).
 
-**App head:** **1.27.83** (Offline Ollama #17 · see CHANGELOG).
+**App head:** **1.27.84** (Voice #18 · see CHANGELOG).
 
 ---
 

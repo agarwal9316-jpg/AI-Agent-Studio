@@ -69,6 +69,7 @@ CHAT_CONTROLS: dict[str, dict[str, str]] = {
     "search": {"label": "🔍 Search", "help": "Ask the AI to search the web for current information."},
     "image": {"label": "🖼 Image", "help": "Ask the AI to make an image from your words (requires an image model)."},
     "mic": {"label": "🎤 Mic", "help": "Speak instead of typing. Your voice is turned into text."},
+    "speak": {"label": "🔊 Speak", "help": "Read the last assistant reply aloud (Settings → Voice)."},
     "send": {"label": "↑ Send", "help": "Send your message to the AI and start a reply. (Enter key does the same.)"},
     "stop": {"label": "■ Stop", "help": "Ask the AI to stop what it is doing right now."},
     "pause": {"label": "⏸ Pause", "help": "Pause a long run and continue from where it left off later."},

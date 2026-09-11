@@ -1,12 +1,67 @@
-"""Speech-to-text (mic) for chat input — Windows-friendly, optional deps."""
+"""Speech-to-text (mic) for chat input — cross-platform, optional deps.
+
+Engines (first available wins):
+  1) speech_recognition + Microphone (+ Google Web Speech)
+  2) Windows PowerShell System.Speech.Recognition (offline)
+Graceful degrade when no mic / no engine.
+"""
 
 from __future__ import annotations
 
 import subprocess
+import sys
 import tempfile
 import threading
 from pathlib import Path
 from typing import Any, Callable
+
+
+def stt_capability() -> dict[str, Any]:
+    """Probe STT availability without capturing audio."""
+    engines: list[str] = []
+    detail = ""
+    has_sr = False
+    has_mic_api = False
+    try:
+        import speech_recognition as sr  # type: ignore  # noqa: F401
+
+        has_sr = True
+        engines.append("speech_recognition")
+        try:
+            names = sr.Microphone.list_microphone_names()  # type: ignore[attr-defined]
+            has_mic_api = True
+            if names:
+                detail = f"{len(names)} mic device(s)"
+            else:
+                detail = "SpeechRecognition installed but no mic devices listed"
+        except Exception as e:  # noqa: BLE001
+            detail = f"Microphone probe failed: {e}"
+    except ImportError:
+        detail = "SpeechRecognition not installed (optional: pip install SpeechRecognition pyaudio)"
+    except Exception as e:  # noqa: BLE001
+        detail = str(e)
+
+    if sys.platform == "win32":
+        engines.append("System.Speech")
+        if not detail:
+            detail = "Windows System.Speech fallback available"
+
+    available = bool(engines) and (has_sr or sys.platform == "win32")
+    if sys.platform != "win32" and not has_sr:
+        available = False
+    return {
+        "available": available,
+        "engines": engines,
+        "has_speech_recognition": has_sr,
+        "has_mic_list": has_mic_api,
+        "platform": sys.platform,
+        "detail": detail or ("ready" if available else "STT unavailable"),
+        "hint": (
+            ""
+            if available
+            else "Install SpeechRecognition + pyaudio, or use Windows Speech Recognition."
+        ),
+    }
 
 
 def listen_once(
@@ -16,10 +71,8 @@ def listen_once(
     language: str = "en-US",
     on_status: Callable[[str], None] | None = None,
 ) -> dict[str, Any]:
-    """
-    Capture one utterance from the default microphone.
-    Tries: SpeechRecognition → Windows PowerShell SAPI → clear error.
-    """
+    """Capture one utterance from the default microphone."""
+
     def status(m: str) -> None:
         if on_status:
             try:
@@ -27,7 +80,16 @@ def listen_once(
             except Exception:  # noqa: BLE001
                 pass
 
-    # 1) speech_recognition (best if installed)
+    cap = stt_capability()
+    if not cap.get("available"):
+        return {
+            "ok": False,
+            "error": cap.get("detail") or "Mic / STT unavailable",
+            "hint": cap.get("hint") or "",
+            "engine": "none",
+            "degraded": True,
+        }
+
     try:
         import speech_recognition as sr  # type: ignore
 
@@ -43,17 +105,45 @@ def listen_once(
         except sr.UnknownValueError:
             return {"ok": False, "error": "Could not understand audio", "engine": "speech_recognition"}
         except sr.RequestError as e:
-            return {"ok": False, "error": f"Recognition service error: {e}", "engine": "speech_recognition"}
+            return {
+                "ok": False,
+                "error": f"Recognition service error: {e}",
+                "engine": "speech_recognition",
+            }
     except ImportError:
         pass
+    except OSError as e:
+        status(f"No microphone: {e}")
+        if sys.platform != "win32":
+            return {
+                "ok": False,
+                "error": f"No microphone available: {e}",
+                "engine": "speech_recognition",
+                "degraded": True,
+            }
     except Exception as e:  # noqa: BLE001
-        # mic missing etc. — try fallback
         status(f"SpeechRecognition failed: {e}")
+        if sys.platform != "win32":
+            return {
+                "ok": False,
+                "error": f"Mic STT failed: {e}",
+                "engine": "speech_recognition",
+                "degraded": True,
+            }
 
-    # 2) Windows PowerShell + System.Speech.Recognition (offline, free)
+    if sys.platform != "win32":
+        return {
+            "ok": False,
+            "error": (
+                "Mic STT unavailable on this platform without SpeechRecognition. "
+                "Optional: pip install SpeechRecognition pyaudio"
+            ),
+            "engine": "none",
+            "degraded": True,
+        }
+
     status("Listening (Windows Speech)…")
     try:
-        # Write a small PS1 to temp to avoid quoting hell
         ps = r"""
 Add-Type -AssemblyName System.Speech
 $rec = New-Object System.Speech.Recognition.SpeechRecognitionEngine
@@ -95,7 +185,10 @@ try {
             if not out:
                 return {
                     "ok": False,
-                    "error": "No speech detected. Install SpeechRecognition for better mic support: pip install SpeechRecognition pyaudio",
+                    "error": (
+                        "No speech detected. Install SpeechRecognition for better mic support: "
+                        "pip install SpeechRecognition pyaudio"
+                    ),
                     "engine": "System.Speech",
                 }
             return {"ok": True, "text": out, "engine": "System.Speech"}
@@ -112,6 +205,7 @@ try {
                 "Optional: pip install SpeechRecognition pyaudio"
             ),
             "engine": "none",
+            "degraded": True,
         }
 
 
@@ -140,13 +234,30 @@ def start_continuous(
     language: str = "en-US",
     on_status: Callable[[str], None] | None = None,
 ) -> None:
-    """
-    Continuous conversation loop: keep listening until stop_continuous().
-    Each successful utterance invokes on_utterance.
-    """
+    """Continuous conversation loop until stop_continuous()."""
     global _loop_thread
     if _loop_thread and _loop_thread.is_alive():
         return
+    cap = stt_capability()
+    if not cap.get("available"):
+        try:
+            on_utterance(
+                {
+                    "ok": False,
+                    "error": cap.get("detail") or "STT unavailable",
+                    "degraded": True,
+                    "engine": "none",
+                }
+            )
+        except Exception:  # noqa: BLE001
+            pass
+        if on_status:
+            try:
+                on_status(str(cap.get("detail") or "STT unavailable"))
+            except Exception:  # noqa: BLE001
+                pass
+        return
+
     _loop_stop.clear()
 
     def _run() -> None:
@@ -169,6 +280,12 @@ def start_continuous(
                     on_utterance(result)
                 except Exception:  # noqa: BLE001
                     pass
+            elif result.get("degraded"):
+                try:
+                    on_utterance(result)
+                except Exception:  # noqa: BLE001
+                    pass
+                break
             import time as _t
 
             _t.sleep(pause_between)

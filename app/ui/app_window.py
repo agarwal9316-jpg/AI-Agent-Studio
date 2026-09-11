@@ -29,6 +29,7 @@ from app.ui.components import (
     name_chat_composer_send_btn,
     name_chat_composer_attach_btn,
     name_chat_composer_mic_btn,
+    name_chat_composer_speak_btn,
     name_chat_composer_mode_chip,
     name_chat_toolbar_button,
     name_chat_toolbar_provider_menu,
@@ -5069,8 +5070,18 @@ class AppWindow(ctk.CTk):
         self.chat_model_menu_composer.pack(side="left", padx=(0, 6))
         set_widget_name(self.chat_model_menu_composer, name_chat_composer_mode_chip())
         self._tooltip(self.chat_model_menu_composer, chat_control_help("models"))
-        mic_btn = tool_btn(right_bar, "🎤", self._chat_mic, width=36, help=chat_control_help("mic"))
-        set_widget_name(mic_btn, name_chat_composer_mic_btn())
+        self.chat_mic_btn = tool_btn(
+            right_bar, "🎤", self._chat_mic, width=36, help=chat_control_help("mic")
+        )
+        set_widget_name(self.chat_mic_btn, name_chat_composer_mic_btn())
+        self.chat_speak_btn = tool_btn(
+            right_bar, "🔊", self._chat_speak_last, width=36, help=chat_control_help("speak")
+        )
+        set_widget_name(self.chat_speak_btn, name_chat_composer_speak_btn())
+        try:
+            self._voice_refresh_composer_buttons()
+        except Exception:  # noqa: BLE001
+            pass
 
         _simple_send = self._is_simple_ui()
         self.chat_send_btn = ctk.CTkButton(
@@ -7746,7 +7757,37 @@ class AppWindow(ctk.CTk):
         self.set_status(f"Exported {out.name}")
 
     def _chat_speak_last(self) -> None:
-        from app.core.services.ai.tts_service import speak_text
+        """Speak last assistant reply (soft-degrades if TTS off/unavailable)."""
+        try:
+            from app.core.services.ai import voice_settings as _vs
+            from app.core.services.ai.tts_service import is_speaking, speak_text, stop_speaking, tts_capability
+        except Exception as e:  # noqa: BLE001
+            messagebox.showinfo("Speak", f"TTS unavailable: {e}", parent=self)
+            return
+
+        if not _vs.tts_enabled():
+            messagebox.showinfo(
+                "Speak",
+                "TTS is disabled in Settings → Voice. Enable “TTS / Speak button” to use read-aloud.",
+                parent=self,
+            )
+            return
+
+        if is_speaking():
+            stop_speaking()
+            self.set_status("Stopped speaking")
+            return
+
+        cap = tts_capability()
+        if not cap.get("available"):
+            messagebox.showinfo(
+                "Speak",
+                (cap.get("detail") or "TTS unavailable")
+                + ("\n" + (cap.get("hint") or "")).rstrip(),
+                parent=self,
+            )
+            self.set_status(f"TTS unavailable: {(cap.get('detail') or '')[:80]}")
+            return
 
         text = ""
         for m in reversed(self._chat_state.get("messages") or []):
@@ -7756,7 +7797,10 @@ class AppWindow(ctk.CTk):
         if not text:
             messagebox.showinfo("Speak", "No assistant message to speak.", parent=self)
             return
-        speak_text(text, async_play=True)
+        res = speak_text(text, async_play=True)
+        if not res.get("ok"):
+            messagebox.showinfo("Speak", str(res.get("error") or "TTS failed"), parent=self)
+            return
         self.set_status("Speaking last assistant reply…")
 
     def _clear_activity(self) -> None:
@@ -15031,6 +15075,10 @@ class AppWindow(ctk.CTk):
                             self.set_status(f"Reply received.  {format_status_line()}")
                     except Exception:  # noqa: BLE001
                         self.set_status("Reply received.")
+                    try:
+                        self._voice_maybe_auto_speak(str(reply or ""))
+                    except Exception:  # noqa: BLE001
+                        pass
                 if self._current_page == "Chat":
                     try:
                         self._chat_render_transcript()
@@ -15202,15 +15250,69 @@ class AppWindow(ctk.CTk):
         self._open_chat_tab(c["id"])
 
     def _chat_voice_continuous(self) -> None:
-        """Toggle continuous voice conversation."""
-        from app.core.services.ai.stt_service import continuous_running, start_continuous, stop_continuous
+        """Toggle continuous voice conversation (Settings mic mode = toggle)."""
+        try:
+            from app.core.services.ai import voice_settings as _vs
+            from app.core.services.ai.stt_service import (
+                continuous_running,
+                start_continuous,
+                stop_continuous,
+                stt_capability,
+            )
+        except Exception as e:  # noqa: BLE001
+            messagebox.showinfo("Voice", f"Mic / STT unavailable: {e}", parent=self)
+            return
 
         if continuous_running():
             stop_continuous()
             self.set_status("Continuous voice OFF")
+            try:
+                self._voice_refresh_composer_buttons()
+            except Exception:  # noqa: BLE001
+                pass
             return
 
+        if not _vs.mic_enabled():
+            messagebox.showinfo(
+                "Voice",
+                "Mic input is disabled in Settings → Voice.",
+                parent=self,
+            )
+            return
+
+        cap = stt_capability()
+        if not cap.get("available"):
+            messagebox.showinfo(
+                "Voice",
+                (cap.get("detail") or "STT unavailable")
+                + ("\n" + (cap.get("hint") or "")).rstrip(),
+                parent=self,
+            )
+            self.set_status(f"STT unavailable: {(cap.get('detail') or '')[:80]}")
+            return
+
+        lang = _vs.voice_language()
+
         def on_utt(result: dict) -> None:
+            if result.get("degraded") and not result.get("ok"):
+                err = str(result.get("error") or "STT unavailable")
+
+                def err_ui() -> None:
+                    if not self.winfo_exists():
+                        return
+                    messagebox.showinfo("Voice", err, parent=self)
+                    self.set_status(f"Voice: {err[:80]}")
+                    try:
+                        self._voice_refresh_composer_buttons()
+                    except Exception:  # noqa: BLE001
+                        pass
+
+                try:
+                    self.after(0, err_ui)
+                except Exception:  # noqa: BLE001
+                    pass
+                return
+
             text = str(result.get("text") or "").strip()
             if not text:
                 return
@@ -15219,9 +15321,14 @@ class AppWindow(ctk.CTk):
                 if not self.winfo_exists():
                     return
                 if hasattr(self, "chat_input"):
-                    self.chat_input.delete("1.0", "end")
-                    self.chat_input.insert("1.0", text)
-                # auto-send if not busy
+                    try:
+                        if getattr(self, "_composer_is_placeholder", False):
+                            self._composer_set_text(text)
+                        else:
+                            self._composer_set_text(text)
+                    except Exception:  # noqa: BLE001
+                        self.chat_input.delete("1.0", "end")
+                        self.chat_input.insert("1.0", text)
                 if not self._chat_busy:
                     self._chat_send()
                 else:
@@ -15234,9 +15341,14 @@ class AppWindow(ctk.CTk):
 
         start_continuous(
             on_utt,
+            language=lang,
             on_status=lambda m: self.after(0, lambda: self.set_status(m) if self.winfo_exists() else None),
         )
-        self.set_status("Continuous voice ON — speak freely; click Talk again to stop")
+        self.set_status("Continuous voice ON — speak freely; click 🎤 again to stop")
+        try:
+            self._voice_refresh_composer_buttons()
+        except Exception:  # noqa: BLE001
+            pass
 
     def _chat_web_search_dialog(self) -> None:
         q = simpledialog.askstring("Web search", "Search the web:", parent=self)
@@ -15415,15 +15527,132 @@ class AppWindow(ctk.CTk):
 
         threading.Thread(target=worker, daemon=True).start()
 
+    def _voice_refresh_composer_buttons(self) -> None:
+        """Enable/disable mic & speak controls from Settings + capability (never raises)."""
+        try:
+            from app.core.services.ai import voice_settings as _vs
+            from app.core.services.ai.stt_service import continuous_running, stt_capability
+            from app.core.services.ai.tts_service import tts_capability
+        except Exception:  # noqa: BLE001
+            return
+        try:
+            mic_on = bool(_vs.mic_enabled())
+            tts_on = bool(_vs.tts_enabled())
+            stt = stt_capability()
+            tts = tts_capability()
+            mic_ok = mic_on and bool(stt.get("available"))
+            tts_ok = tts_on and bool(tts.get("available"))
+            if hasattr(self, "chat_mic_btn"):
+                try:
+                    self.chat_mic_btn.configure(state="normal" if mic_on else "disabled")
+                    tip = chat_control_help("mic")
+                    if not mic_on:
+                        tip = "Mic disabled in Settings → Voice"
+                    elif not stt.get("available"):
+                        tip = f"Mic unavailable: {stt.get('detail') or 'no STT engine'}"
+                    elif _vs.mic_mode() == "toggle":
+                        tip = (
+                            "Continuous voice ON — click to stop"
+                            if continuous_running()
+                            else "Toggle continuous voice listen (Settings: mic mode = toggle)"
+                        )
+                    self._tooltip(self.chat_mic_btn, tip)
+                except Exception:  # noqa: BLE001
+                    pass
+            if hasattr(self, "chat_speak_btn"):
+                try:
+                    self.chat_speak_btn.configure(state="normal" if tts_on else "disabled")
+                    tip = chat_control_help("speak")
+                    if not tts_on:
+                        tip = "TTS disabled in Settings → Voice"
+                    elif not tts.get("available"):
+                        tip = f"TTS unavailable: {tts.get('detail') or 'no engine'}"
+                    self._tooltip(self.chat_speak_btn, tip)
+                except Exception:  # noqa: BLE001
+                    pass
+            # Silence unused when engines missing — buttons stay clickable to show reason
+            _ = mic_ok, tts_ok
+        except Exception:  # noqa: BLE001
+            pass
+
+    def _voice_maybe_auto_speak(self, reply: str) -> None:
+        """Optional auto read-aloud of assistant replies (Settings). Soft-degrades."""
+        try:
+            from app.core.services.ai import voice_settings as _vs
+            from app.core.services.ai.tts_service import speak_text, tts_capability
+        except Exception:  # noqa: BLE001
+            return
+        try:
+            if not _vs.tts_enabled() or not _vs.auto_read_aloud():
+                return
+            if not (reply or "").strip():
+                return
+            cap = tts_capability()
+            if not cap.get("available"):
+                self.set_status(f"Auto-speak skipped: {(cap.get('detail') or 'TTS unavailable')[:80]}")
+                return
+            speak_text(reply, async_play=True)
+            self.set_status("Auto-speaking assistant reply…")
+        except Exception:  # noqa: BLE001
+            pass
+
     def _chat_mic(self) -> None:
-        """Speech-to-text into the chat input (Ctrl+M)."""
+        """Speech-to-text into the chat input (Ctrl+M). Respects Settings → Voice."""
+        try:
+            from app.core.services.ai import voice_settings as _vs
+            from app.core.services.ai.stt_service import continuous_running, listen_async, stt_capability
+        except Exception as e:  # noqa: BLE001
+            messagebox.showinfo("Mic / STT", f"Mic unavailable: {e}", parent=self)
+            return
+
+        if not _vs.mic_enabled():
+            messagebox.showinfo(
+                "Mic / STT",
+                "Mic input is disabled in Settings → Voice. Enable “Mic input in chat” to use 🎤.",
+                parent=self,
+            )
+            return
+
+        # Toggle mode → continuous conversation
+        if _vs.mic_mode() == "toggle":
+            self._chat_voice_continuous()
+            return
+
+        if continuous_running():
+            from app.core.services.ai.stt_service import stop_continuous
+
+            stop_continuous()
+            self.set_status("Continuous voice OFF")
+            try:
+                self._voice_refresh_composer_buttons()
+            except Exception:  # noqa: BLE001
+                pass
+            return
+
         if getattr(self, "_mic_busy", False):
             self.set_status("Mic already listening…")
             return
+
+        cap = stt_capability()
+        if not cap.get("available"):
+            messagebox.showinfo(
+                "Mic / STT",
+                (cap.get("detail") or "STT unavailable")
+                + ("\n" + (cap.get("hint") or "")).rstrip(),
+                parent=self,
+            )
+            self.set_status(f"Mic unavailable: {(cap.get('detail') or '')[:80]}")
+            return
+
         self._mic_busy = True
         self.set_status("🎤 Listening… speak now")
         if hasattr(self, "chat_status"):
-            self.chat_status.configure(text="Listening…")
+            try:
+                self.chat_status.configure(text="Listening…")
+            except Exception:  # noqa: BLE001
+                pass
+
+        lang = _vs.voice_language()
 
         def done(result: dict) -> None:
             def ui() -> None:
@@ -15446,7 +15675,9 @@ class AppWindow(ctk.CTk):
                         self.chat_status.configure(text="Ready")
                 else:
                     err = result.get("error") or "No speech"
-                    messagebox.showinfo("Mic / STT", err, parent=self)
+                    hint = result.get("hint") or ""
+                    msg = err + (f"\n{hint}" if hint else "")
+                    messagebox.showinfo("Mic / STT", msg, parent=self)
                     self.set_status(f"Mic: {err[:80]}")
                     if hasattr(self, "chat_status"):
                         self.chat_status.configure(text="Ready")
@@ -15456,9 +15687,11 @@ class AppWindow(ctk.CTk):
             except Exception:  # noqa: BLE001
                 self._mic_busy = False
 
-        from app.core.services.ai.stt_service import listen_async
-
-        listen_async(done, on_status=lambda m: self.after(0, lambda: self.set_status(m)))
+        listen_async(
+            done,
+            language=lang,
+            on_status=lambda m: self.after(0, lambda: self.set_status(m) if self.winfo_exists() else None),
+        )
 
     def _chat_toggle_pin(self) -> None:
         cid = self._chat_state.get("id") or chat_store.get_active_chat_id()
@@ -17120,68 +17353,92 @@ class AppWindow(ctk.CTk):
         except Exception:  # noqa: BLE001
             pass
 
-        # PENDING #18: Voice in/out
-        from app.core.services.ai import voice_settings as _vs
-        from app.core.services.ai.stt_service import stt_capability as _stt_cap
-        from app.core.services.ai.tts_service import tts_capability as _tts_cap
-
-        _vs.ensure_defaults(cfg)
-        ctk.CTkLabel(
-            frame,
-            text="Voice (mic in / read-aloud out)",
-            font=ctk.CTkFont(size=14, weight="bold"),
-            text_color=_HC_LABEL,
-        ).grid(row=6, column=0, sticky="w", pady=(8, 2))
-        voice_box = ctk.CTkFrame(frame)
-        voice_box.grid(row=7, column=0, sticky="ew", pady=6)
-        voice_mic_var = ctk.BooleanVar(master=voice_box, value=bool(cfg.get("voice_mic_enabled", True)))
-        voice_tts_var = ctk.BooleanVar(master=voice_box, value=bool(cfg.get("voice_tts_enabled", True)))
-        voice_auto_var = ctk.BooleanVar(master=voice_box, value=bool(cfg.get("voice_auto_read_aloud", False)))
-        _mode_cur = str(cfg.get("voice_mic_mode") or "push_to_talk")
-        if _mode_cur not in ("push_to_talk", "toggle"):
-            _mode_cur = "push_to_talk"
-        voice_mode_var = ctk.StringVar(master=voice_box, value=_mode_cur)
-        voice_lang_var = ctk.StringVar(master=voice_box, value=str(cfg.get("voice_language") or "en-US"))
-        row_v1 = ctk.CTkFrame(voice_box, fg_color="transparent")
-        row_v1.pack(fill="x", padx=8, pady=4)
-        ctk.CTkSwitch(row_v1, text="Mic input in chat", variable=voice_mic_var).pack(side="left", padx=4)
-        ctk.CTkSwitch(row_v1, text="TTS / Speak button", variable=voice_tts_var).pack(side="left", padx=8)
-        ctk.CTkSwitch(
-            row_v1, text="Auto read-aloud assistant replies", variable=voice_auto_var
-        ).pack(side="left", padx=8)
-        row_v2 = ctk.CTkFrame(voice_box, fg_color="transparent")
-        row_v2.pack(fill="x", padx=8, pady=4)
-        ctk.CTkLabel(row_v2, text="Mic mode", text_color=_HC_LABEL).pack(side="left", padx=(4, 6))
-        ctk.CTkOptionMenu(
-            row_v2,
-            variable=voice_mode_var,
-            values=["push_to_talk", "toggle"],
-            width=140,
-        ).pack(side="left", padx=4)
-        ctk.CTkLabel(
-            row_v2,
-            text="push_to_talk = click 🎤 once · toggle = continuous listen",
-            text_color=_HC_MUTED,
-            font=ctk.CTkFont(size=11),
-        ).pack(side="left", padx=8)
-        ctk.CTkLabel(row_v2, text="Language", text_color=_HC_LABEL).pack(side="left", padx=(12, 4))
-        ctk.CTkEntry(row_v2, textvariable=voice_lang_var, width=90).pack(side="left", padx=4)
-        _stt = _stt_cap()
-        _tts = _tts_cap()
-        _stt_line = (
-            f"STT: {'ready' if _stt.get('available') else 'unavailable'} — {_stt.get('detail') or ''}"
-        )
-        _tts_line = (
-            f"TTS: {'ready' if _tts.get('available') else 'unavailable'} — {_tts.get('detail') or ''}"
-        )
-        ctk.CTkLabel(
-            voice_box,
-            text=_stt_line[:160] + "\n" + _tts_line[:160],
-            text_color=_HC_MUTED,
-            justify="left",
-            anchor="w",
-            font=ctk.CTkFont(size=11),
-        ).pack(anchor="w", padx=12, pady=(2, 8))
+        # PENDING #18: Voice in/out (soft-degrade if deps missing)
+        voice_mic_var = None
+        voice_tts_var = None
+        voice_auto_var = None
+        voice_mode_var = None
+        voice_lang_var = None
+        try:
+            from app.core.services.ai import voice_settings as _vs
+            from app.core.services.ai.stt_service import stt_capability as _stt_cap
+            from app.core.services.ai.tts_service import tts_capability as _tts_cap
+            
+            _vs.ensure_defaults(cfg)
+            ctk.CTkLabel(
+                frame,
+                text="Voice (mic in / read-aloud out)",
+                font=ctk.CTkFont(size=14, weight="bold"),
+                text_color=_HC_LABEL,
+            ).grid(row=6, column=0, sticky="w", pady=(8, 2))
+            voice_box = ctk.CTkFrame(frame)
+            voice_box.grid(row=7, column=0, sticky="ew", pady=6)
+            voice_mic_var = ctk.BooleanVar(master=voice_box, value=bool(cfg.get("voice_mic_enabled", True)))
+            voice_tts_var = ctk.BooleanVar(master=voice_box, value=bool(cfg.get("voice_tts_enabled", True)))
+            voice_auto_var = ctk.BooleanVar(master=voice_box, value=bool(cfg.get("voice_auto_read_aloud", False)))
+            _mode_cur = str(cfg.get("voice_mic_mode") or "push_to_talk")
+            if _mode_cur not in ("push_to_talk", "toggle"):
+                _mode_cur = "push_to_talk"
+            voice_mode_var = ctk.StringVar(master=voice_box, value=_mode_cur)
+            voice_lang_var = ctk.StringVar(master=voice_box, value=str(cfg.get("voice_language") or "en-US"))
+            row_v1 = ctk.CTkFrame(voice_box, fg_color="transparent")
+            row_v1.pack(fill="x", padx=8, pady=4)
+            ctk.CTkSwitch(row_v1, text="Mic input in chat", variable=voice_mic_var).pack(side="left", padx=4)
+            ctk.CTkSwitch(row_v1, text="TTS / Speak button", variable=voice_tts_var).pack(side="left", padx=8)
+            ctk.CTkSwitch(
+                row_v1, text="Auto read-aloud assistant replies", variable=voice_auto_var
+            ).pack(side="left", padx=8)
+            row_v2 = ctk.CTkFrame(voice_box, fg_color="transparent")
+            row_v2.pack(fill="x", padx=8, pady=4)
+            ctk.CTkLabel(row_v2, text="Mic mode", text_color=_HC_LABEL).pack(side="left", padx=(4, 6))
+            ctk.CTkOptionMenu(
+                row_v2,
+                variable=voice_mode_var,
+                values=["push_to_talk", "toggle"],
+                width=140,
+            ).pack(side="left", padx=4)
+            ctk.CTkLabel(
+                row_v2,
+                text="push_to_talk = click 🎤 once · toggle = continuous listen",
+                text_color=_HC_MUTED,
+                font=ctk.CTkFont(size=11),
+            ).pack(side="left", padx=8)
+            ctk.CTkLabel(row_v2, text="Language", text_color=_HC_LABEL).pack(side="left", padx=(12, 4))
+            ctk.CTkEntry(row_v2, textvariable=voice_lang_var, width=90).pack(side="left", padx=4)
+            _stt = _stt_cap()
+            _tts = _tts_cap()
+            _stt_line = (
+                f"STT: {'ready' if _stt.get('available') else 'unavailable'} — {_stt.get('detail') or ''}"
+            )
+            _tts_line = (
+                f"TTS: {'ready' if _tts.get('available') else 'unavailable'} — {_tts.get('detail') or ''}"
+            )
+            ctk.CTkLabel(
+                voice_box,
+                text=_stt_line[:160] + "\n" + _tts_line[:160],
+                text_color=_HC_MUTED,
+                justify="left",
+                anchor="w",
+                font=ctk.CTkFont(size=11),
+            ).pack(anchor="w", padx=12, pady=(2, 8))
+            
+        except Exception as _voice_ui_err:  # noqa: BLE001
+            try:
+                ctk.CTkLabel(
+                    frame,
+                    text="Voice (mic in / read-aloud out)",
+                    font=ctk.CTkFont(size=14, weight="bold"),
+                    text_color=_HC_LABEL,
+                ).grid(row=6, column=0, sticky="w", pady=(8, 2))
+                ctk.CTkLabel(
+                    frame,
+                    text=f"Voice settings unavailable: {_voice_ui_err}",
+                    text_color=_HC_MUTED,
+                    wraplength=720,
+                    justify="left",
+                ).grid(row=7, column=0, sticky="w", pady=4, padx=8)
+            except Exception:  # noqa: BLE001
+                pass
 
         # Image presets + capability matrix
         ctk.CTkLabel(
@@ -17292,12 +17549,17 @@ class AppWindow(ctk.CTk):
             self.cfg["self_improve_require_review"] = bool(si_review_var.get())
             # Voice (#18)
             try:
-                self.cfg["voice_mic_enabled"] = bool(voice_mic_var.get())
-                self.cfg["voice_tts_enabled"] = bool(voice_tts_var.get())
-                self.cfg["voice_auto_read_aloud"] = bool(voice_auto_var.get())
-                _vm = str(voice_mode_var.get() or "push_to_talk")
-                self.cfg["voice_mic_mode"] = _vm if _vm in ("push_to_talk", "toggle") else "push_to_talk"
-                self.cfg["voice_language"] = (voice_lang_var.get() or "en-US").strip() or "en-US"
+                if voice_mic_var is not None:
+                    self.cfg["voice_mic_enabled"] = bool(voice_mic_var.get())
+                if voice_tts_var is not None:
+                    self.cfg["voice_tts_enabled"] = bool(voice_tts_var.get())
+                if voice_auto_var is not None:
+                    self.cfg["voice_auto_read_aloud"] = bool(voice_auto_var.get())
+                if voice_mode_var is not None:
+                    _vm = str(voice_mode_var.get() or "push_to_talk")
+                    self.cfg["voice_mic_mode"] = _vm if _vm in ("push_to_talk", "toggle") else "push_to_talk"
+                if voice_lang_var is not None:
+                    self.cfg["voice_language"] = (voice_lang_var.get() or "en-US").strip() or "en-US"
             except Exception:  # noqa: BLE001
                 pass
             self.cfg["chat_density"] = dens_var.get() if dens_var.get() in ("compact", "comfortable") else "compact"

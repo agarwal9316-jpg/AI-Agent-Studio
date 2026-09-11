@@ -8,6 +8,7 @@ Versions from `app/version.py`. Newest first within major eras.
 
 | Version | Notes |
 |---------|--------|
+| **1.27.84** | **PENDING #18 — Voice in/out first-class:** Settings → Voice (mic/TTS enable, mic mode, language, auto read-aloud); composer 🎤 / 🔊 wired to STT/TTS with capability probes; soft-degrade when SpeechRecognition/pyttsx3/mic missing; `voice_settings` + `stt_capability` / `tts_capability`. |
 | **1.27.83** | **PENDING #17 — Offline Ollama path clearly labeled:** provider/Models UI show **Offline · Ollama (local)** (not a cloud API); editable base `http://127.0.0.1:11434`; health detect with install/start next actions; fetch local models when up, clear error when down; soft-degrades other providers. |
 | **1.27.82** | **PENDING #16 — Export audit log of tool calls:** persist every tool call (name, redacted args, result/status/error, timestamp, chat id) to `data/tool_audit.json`; Settings → Agent harness → **Export JSON / CSV**, Clear, Rotate; soft-degrades so chat never breaks. |
 | **1.27.81** | **PENDING #19 — System tray + run in background:** pystray tray icon with **Show / Hide / Quit**; close/minimize can hide to tray; Settings toggles + optional **Start minimized**. Soft-degrades if pystray missing. Launch.bat unchanged. |

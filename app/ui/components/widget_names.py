@@ -202,6 +202,11 @@ def name_chat_composer_mic_btn() -> str:
     return build_name(WINDOW_NAME, REGION_CONTENT, PAGE_CHAT, CHAT_COMPOSER, f"{PREFIX_BUTTON}_mic")
 
 
+def name_chat_composer_speak_btn() -> str:
+    """Name for the chat composer speak / TTS button."""
+    return build_name(WINDOW_NAME, REGION_CONTENT, PAGE_CHAT, CHAT_COMPOSER, f"{PREFIX_BUTTON}_speak")
+
+
 def name_chat_composer_mode_chip(mode: str = "current") -> str:
     """Name for a mode chip in chat composer (Plan/Action/etc)."""
     return build_name(WINDOW_NAME, REGION_CONTENT, PAGE_CHAT, CHAT_COMPOSER, f"{PREFIX_BUTTON}_chip_{mode or 'current'}")
@@ -503,7 +508,7 @@ __all__ = [
     "name_page_body", "name_page_save_bar",
     "name_chat_messages_scroll", "name_chat_message_bubble",
     "name_chat_composer_input", "name_chat_composer_send_btn",
-    "name_chat_composer_attach_btn", "name_chat_composer_mic_btn",
+    "name_chat_composer_attach_btn", "name_chat_composer_mic_btn", "name_chat_composer_speak_btn",
     "name_chat_composer_mode_chip", "name_chat_toolbar_button",
     "name_chat_toolbar_provider_menu", "name_chat_toolbar_model_menu",
     "name_chat_toolbar_model_search",
