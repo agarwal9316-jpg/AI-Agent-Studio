@@ -257,6 +257,12 @@ class AppWindow(ctk.CTk):
         self._chat_busy_started = 0.0
         self._chat_stop_click_ts = 0.0
         self._chat_show_tools = False
+        # P0.2 multi-model compare / arena (OWUI-style)
+        self._compare_mode = bool((self.cfg or {}).get("compare_mode", False))
+        self._compare_models: list[str] = list(
+            (self.cfg or {}).get("compare_models") or []
+        )[:3]
+        self._compare_layout = str((self.cfg or {}).get("compare_layout") or "stacked")
         self._chat_page_gen = 0
         self._task_status = "none"
         self._llm_phase = "idle"
@@ -4326,6 +4332,20 @@ class AppWindow(ctk.CTk):
             )
         self._mode_chip_btn.pack(side="left", padx=1)
         set_widget_name(self._mode_chip_btn, name_chat_topbar_mode_chip())
+        # P0.2: Compare / Multi-model chip
+        self._compare_chip_btn = ctk.CTkButton(
+            right,
+            text="Compare" if not self._compare_mode else "Compare●",
+            width=72,
+            height=28,
+            command=self._chat_toggle_compare_mode,
+            **style_chrome_button(active=bool(self._compare_mode)),
+        )
+        self._compare_chip_btn.pack(side="left", padx=1)
+        self._tooltip(
+            self._compare_chip_btn,
+            chat_control_help("compare"),
+        )
         if not self._is_simple_ui():
             ctk.CTkButton(
                 right,
@@ -9306,6 +9326,460 @@ class AppWindow(ctk.CTk):
             except Exception:  # noqa: BLE001
                 pass
 
+    def _chat_toggle_compare_mode(self) -> None:
+        """P0.2: toggle Compare / multi-model arena (OWUI-style)."""
+        if bool(getattr(self, "_compare_mode", False)):
+            self._compare_mode = False
+            self._persist_compare_prefs()
+            self._refresh_compare_chip()
+            self.set_status("Compare off — single model chat", toast=True)
+            return
+        self._chat_open_compare_picker()
+
+    def _refresh_compare_chip(self) -> None:
+        btn = getattr(self, "_compare_chip_btn", None)
+        if btn is None:
+            return
+        on = bool(getattr(self, "_compare_mode", False))
+        try:
+            from app.ui.themes import style_chrome_button
+
+            kwargs = style_chrome_button(active=on)
+            # avoid clobbering geometry keys that CTk may reject mid-flight
+            for k in ("height", "width"):
+                kwargs.pop(k, None)
+            btn.configure(text="Compare●" if on else "Compare", **kwargs)
+        except Exception:  # noqa: BLE001
+            try:
+                btn.configure(text="Compare●" if on else "Compare")
+            except Exception:  # noqa: BLE001
+                pass
+
+    def _persist_compare_prefs(self) -> None:
+        try:
+            cfg = storage.load_config()
+            cfg["compare_mode"] = bool(getattr(self, "_compare_mode", False))
+            cfg["compare_models"] = list(getattr(self, "_compare_models", None) or [])[:3]
+            cfg["compare_layout"] = str(getattr(self, "_compare_layout", "stacked") or "stacked")
+            storage.save_config(cfg)
+            self.cfg = cfg
+        except Exception:  # noqa: BLE001
+            pass
+
+    def _chat_open_compare_picker(self) -> None:
+        """Dialog: pick 2–3 models for parallel compare (text-only / no tools)."""
+        from app.ui.themes import style_chrome_button, style_option_menu, UI as _UI
+        from app.core.services.chat.multimodel import (
+            MAX_COMPARE_MODELS,
+            MIN_COMPARE_MODELS,
+            normalize_compare_models,
+        )
+
+        choices = list(getattr(self, "_chat_model_choices", None) or [])
+        if not choices:
+            choices = ["(fetch models first)"]
+        active = ""
+        try:
+            active = self.chat_model_var.get() if hasattr(self, "chat_model_var") else ""
+        except Exception:  # noqa: BLE001
+            active = ""
+        preset = list(getattr(self, "_compare_models", None) or [])
+        if active and active not in preset:
+            preset = [active] + [m for m in preset if m != active]
+        while len(preset) < MAX_COMPARE_MODELS:
+            for c in choices:
+                if c not in preset and not str(c).startswith("("):
+                    preset.append(c)
+                    break
+            else:
+                preset.append(choices[0])
+                break
+        preset = preset[:MAX_COMPARE_MODELS]
+
+        win = ctk.CTkToplevel(self)
+        win.title("Compare models")
+        win.geometry("460x360")
+        win.transient(self)
+        win.grab_set()
+        ctk.CTkLabel(
+            win,
+            text="Multi-model compare (arena)",
+            font=ctk.CTkFont(size=15, weight="bold"),
+            text_color=_UI["label"],
+        ).pack(anchor="w", padx=14, pady=(12, 4))
+        ctk.CTkLabel(
+            win,
+            text=(
+                f"Pick {MIN_COMPARE_MODELS}–{MAX_COMPARE_MODELS} models. "
+                "One prompt → parallel text replies (no tools). "
+                "Use “Use this reply” to keep a winner in the main chat."
+            ),
+            wraplength=420,
+            justify="left",
+            text_color=_UI["muted"],
+        ).pack(anchor="w", padx=14, pady=(0, 8))
+
+        vars_: list = []
+        for i in range(MAX_COMPARE_MODELS):
+            row = ctk.CTkFrame(win, fg_color="transparent")
+            row.pack(fill="x", padx=14, pady=4)
+            ctk.CTkLabel(row, text=f"Model {i + 1}", width=70, anchor="w").pack(side="left")
+            v = ctk.StringVar(master=win, value=preset[i] if i < len(preset) else choices[0])
+            vars_.append(v)
+            ctk.CTkOptionMenu(
+                row,
+                values=choices,
+                variable=v,
+                width=300,
+                **style_option_menu(),
+            ).pack(side="left", padx=4)
+
+        layout_var = ctk.StringVar(
+            master=win,
+            value=str(getattr(self, "_compare_layout", "stacked") or "stacked"),
+        )
+        lay = ctk.CTkFrame(win, fg_color="transparent")
+        lay.pack(fill="x", padx=14, pady=8)
+        ctk.CTkLabel(lay, text="Layout", width=70, anchor="w").pack(side="left")
+        ctk.CTkOptionMenu(
+            lay,
+            values=["stacked", "columns"],
+            variable=layout_var,
+            width=140,
+            **style_option_menu(),
+        ).pack(side="left", padx=4)
+
+        def apply_on() -> None:
+            picked = normalize_compare_models([v.get() for v in vars_])
+            if len(picked) < MIN_COMPARE_MODELS:
+                self.set_status(
+                    f"Need {MIN_COMPARE_MODELS}+ different models", toast=True
+                )
+                return
+            self._compare_models = picked
+            self._compare_layout = layout_var.get() or "stacked"
+            self._compare_mode = True
+            self._persist_compare_prefs()
+            self._refresh_compare_chip()
+            try:
+                win.destroy()
+            except Exception:  # noqa: BLE001
+                pass
+            self.set_status(
+                f"Compare on · {', '.join(picked)} · text-only (no tools)",
+                toast=True,
+            )
+
+        def cancel() -> None:
+            try:
+                win.destroy()
+            except Exception:  # noqa: BLE001
+                pass
+
+        btns = ctk.CTkFrame(win, fg_color="transparent")
+        btns.pack(fill="x", padx=14, pady=16)
+        ctk.CTkButton(
+            btns,
+            text="Start Compare",
+            width=140,
+            command=apply_on,
+            **style_chrome_button(primary=True),
+        ).pack(side="left", padx=4)
+        ctk.CTkButton(
+            btns, text="Cancel", width=90, command=cancel, **style_chrome_button()
+        ).pack(side="left", padx=4)
+
+    def _chat_send_compare(self, *, text: str, hist: list, user_sys: str = "") -> None:
+        """Worker path: parallel LLM calls, soft-degrade, no tools."""
+        import threading
+        from datetime import datetime, timezone
+
+        from app.core.services.chat.multimodel import (
+            make_compare_message,
+            run_parallel_completions,
+            validate_compare_models,
+        )
+        from app.core.services.llm.providers import resolve_active_llm
+
+        models = list(getattr(self, "_compare_models", None) or [])
+        ok, err_msg, cleaned = validate_compare_models(models)
+        if not ok:
+            self._compare_mode = False
+            self._refresh_compare_chip()
+            self._chat_busy = False
+            self._chat_busy_started = 0.0
+            try:
+                if hasattr(self, "chat_send_btn"):
+                    self.chat_send_btn.configure(state="normal", text="↑")
+                if hasattr(self, "chat_stop_btn"):
+                    self.chat_stop_btn.configure(state="disabled")
+                if hasattr(self, "chat_status"):
+                    self.chat_status.configure(text=err_msg)
+            except Exception:  # noqa: BLE001
+                pass
+            self.set_status(err_msg, toast=True)
+            self._chat_open_compare_picker()
+            return
+
+        if not user_sys:
+            try:
+                cfg_now = storage.load_config()
+                user_sys = (cfg_now.get("system_prompt") or "").strip()
+            except Exception:  # noqa: BLE001
+                user_sys = ""
+
+        try:
+            self._append_thinking_step(
+                f"Compare · {len(cleaned)} models in parallel (no tools)…"
+            )
+        except Exception:  # noqa: BLE001
+            pass
+        if hasattr(self, "chat_status"):
+            try:
+                self.chat_status.configure(text=f"Comparing {len(cleaned)} models…")
+            except Exception:  # noqa: BLE001
+                pass
+
+        prior = [m for m in hist[:-1] if not m.get("_streaming")]
+
+        def worker() -> None:
+            err: str | None = None
+            compare_msg = None
+            try:
+                active = resolve_active_llm()
+                api_key = str(active.get("api_key") or "")
+                base_url = str(active.get("base_url") or "")
+                done_n = {"n": 0}
+
+                def on_done(res) -> None:
+                    done_n["n"] += 1
+                    label = res.model if getattr(res, "ok", False) else f"{res.model} ✗"
+
+                    def _step(n=done_n["n"], lab=label) -> None:
+                        try:
+                            self._append_thinking_step(f"Compare {n}/{len(cleaned)} · {lab}")
+                        except Exception:  # noqa: BLE001
+                            pass
+
+                    self._ui_call(_step)
+
+                results = run_parallel_completions(
+                    models=cleaned,
+                    user_text=text or "(empty)",
+                    api_key=api_key,
+                    base_url=base_url,
+                    system_prompt=user_sys,
+                    history=prior,
+                    timeout=90.0,
+                    on_model_done=on_done,
+                )
+                compare_msg = make_compare_message(results, user_text=text or "")
+                if not any(r.ok for r in results):
+                    err = "All compared models failed — see panes for details."
+            except Exception as e:  # noqa: BLE001
+                err = str(e)
+
+            def finish() -> None:
+                self._chat_busy = False
+                self._chat_cancel = False
+                self._chat_paused = False
+                self._chat_busy_started = 0.0
+                try:
+                    if hasattr(self, "chat_send_btn"):
+                        self.chat_send_btn.configure(state="normal", text="↑")
+                    if hasattr(self, "chat_stop_btn"):
+                        self.chat_stop_btn.configure(
+                            state="disabled",
+                            text="■ Stop",
+                            fg_color=("#d1d5db", "#3f3f46"),
+                        )
+                except Exception:  # noqa: BLE001
+                    pass
+                messages = [m for m in (hist or []) if not m.get("_streaming")]
+                if compare_msg is not None:
+                    messages.append(compare_msg)
+                if err and compare_msg is None:
+                    messages.append(
+                        {
+                            "role": "error",
+                            "content": err,
+                            "at": datetime.now(timezone.utc).isoformat(),
+                        }
+                    )
+                self._chat_state["messages"] = messages
+                try:
+                    chat_svc.save_chat(self._chat_state)
+                except Exception:  # noqa: BLE001
+                    pass
+                try:
+                    self._finish_thinking_bubble(ok=not bool(err and compare_msg is None))
+                except Exception:  # noqa: BLE001
+                    pass
+                try:
+                    self._chat_render_transcript()
+                except Exception:  # noqa: BLE001
+                    pass
+                ok_n = 0
+                if compare_msg:
+                    ok_n = sum(
+                        1
+                        for r in (compare_msg.get("compare_results") or [])
+                        if r.get("ok")
+                    )
+                if hasattr(self, "chat_status"):
+                    try:
+                        self.chat_status.configure(
+                            text=f"Compare ready · {ok_n}/{len(cleaned)} ok"
+                        )
+                    except Exception:  # noqa: BLE001
+                        pass
+                self.set_status(
+                    f"Compare done · {ok_n}/{len(cleaned)} models replied (text-only)",
+                    toast=True,
+                )
+
+            self._ui_call(finish)
+
+        threading.Thread(target=worker, daemon=True, name="chat-compare").start()
+
+    def _render_compare_arena(self, parent: Any, msg: dict) -> None:
+        """Stacked or column panes for parallel model replies + Use this."""
+        from app.ui.themes import style_chrome_button, UI as _UI
+
+        results = list(msg.get("compare_results") or [])
+        layout = str(getattr(self, "_compare_layout", "stacked") or "stacked")
+        pad = self._chat_side_pad() if hasattr(self, "_chat_side_pad") else 12
+        wrap = ctk.CTkFrame(
+            parent,
+            fg_color=_UI.get("bubble_assistant", ("#f4f4f5", "#1f1f23")),
+            corner_radius=12,
+            border_width=1,
+            border_color=_UI.get("top_border", ("#6b7280", "#4b5563")),
+        )
+        wrap.pack(fill="x", padx=pad, pady=(6, 10))
+        head = ctk.CTkFrame(wrap, fg_color="transparent")
+        head.pack(fill="x", padx=10, pady=(8, 4))
+        ctk.CTkLabel(
+            head,
+            text="⚔ Compare · multi-model (no tools)",
+            font=ctk.CTkFont(size=13, weight="bold"),
+            text_color=_UI["label"],
+            anchor="w",
+        ).pack(side="left")
+        ctk.CTkLabel(
+            head,
+            text=f"{sum(1 for r in results if r.get('ok'))}/{len(results)} ok",
+            text_color=_UI["muted"],
+            anchor="e",
+        ).pack(side="right")
+
+        body = ctk.CTkFrame(wrap, fg_color="transparent")
+        body.pack(fill="both", expand=True, padx=8, pady=(0, 8))
+        if layout == "columns" and len(results) > 1:
+            for i in range(len(results)):
+                body.grid_columnconfigure(i, weight=1)
+            for i, res in enumerate(results):
+                col = ctk.CTkFrame(body, fg_color="transparent")
+                col.grid(row=0, column=i, sticky="nsew", padx=4, pady=2)
+                self._render_compare_pane(col, msg, res, idx=i)
+        else:
+            for i, res in enumerate(results):
+                self._render_compare_pane(body, msg, res, idx=i)
+
+    def _render_compare_pane(
+        self, parent: Any, msg: dict, res: dict, *, idx: int
+    ) -> None:
+        from app.ui.themes import style_chrome_button, UI as _UI
+
+        model = str(res.get("model") or f"model-{idx}")
+        ok = bool(res.get("ok"))
+        pane = ctk.CTkFrame(
+            parent,
+            fg_color=_UI.get("composer_input", ("#ffffff", "#1a1a1a")),
+            corner_radius=10,
+            border_width=1,
+            border_color=("#16a34a", "#166534") if ok else ("#dc2626", "#7f1d1d"),
+        )
+        pane.pack(fill="x", pady=4)
+        top = ctk.CTkFrame(pane, fg_color="transparent")
+        top.pack(fill="x", padx=8, pady=(6, 2))
+        status = "✓" if ok else "✗"
+        ms = res.get("elapsed_ms")
+        meta = f"{status}  {model}"
+        if ms:
+            meta += f"  ·  {ms} ms"
+        ctk.CTkLabel(
+            top,
+            text=meta,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color=_UI["label"],
+            anchor="w",
+        ).pack(side="left", fill="x", expand=True)
+        if ok:
+            ctk.CTkButton(
+                top,
+                text="Use this reply",
+                width=110,
+                height=26,
+                command=lambda m=msg, r=res: self._chat_use_compare_reply(m, r),
+                **style_chrome_button(primary=True),
+            ).pack(side="right", padx=2)
+        body_txt = (
+            str(res.get("content") or "")
+            if ok
+            else f"Error: {res.get('error') or 'failed'}"
+        )
+        tb = ctk.CTkTextbox(
+            pane,
+            height=min(220, 40 + min(12, body_txt.count("\n") + 1) * 16),
+            wrap="word",
+            font=ctk.CTkFont(size=13),
+            fg_color="transparent",
+            activate_scrollbars=True,
+        )
+        tb.pack(fill="x", padx=8, pady=(0, 8))
+        tb.insert("1.0", body_txt)
+        tb.configure(state="disabled")
+
+    def _chat_use_compare_reply(self, compare_msg: dict, result: dict) -> None:
+        """Copy winning model answer into the main chat thread."""
+        from datetime import datetime, timezone
+
+        from app.core.services.chat.multimodel import pick_winning_content
+
+        content = pick_winning_content(result).strip()
+        if not content:
+            self.set_status("Empty reply — nothing to use", toast=True)
+            return
+        model = str(result.get("model") or "")
+        hist = list(self._chat_state.get("messages") or [])
+        hist.append(
+            {
+                "role": "assistant",
+                "content": content,
+                "agent_name": "Chat",
+                "model": model,
+                "from_compare": True,
+                "at": datetime.now(timezone.utc).isoformat(),
+            }
+        )
+        self._chat_state["messages"] = hist
+        if model and hasattr(self, "chat_model_var"):
+            try:
+                self.chat_model_var.set(model)
+                self._on_chat_model_change(model)
+            except Exception:  # noqa: BLE001
+                pass
+        try:
+            chat_svc.save_chat(self._chat_state)
+        except Exception:  # noqa: BLE001
+            pass
+        try:
+            self._chat_render_transcript()
+        except Exception:  # noqa: BLE001
+            pass
+        self.set_status(f"Using reply from {model or 'model'}", toast=True)
+
     def _chat_cycle_mode_chip(self) -> None:
         """Click mode chip: plan ↔ action."""
         if not hasattr(self, "chat_mode_var"):
@@ -12878,7 +13352,13 @@ class AppWindow(ctk.CTk):
             think = None
             if kind == "assistant":
                 think = self._thinking_attached_to(all_messages, full_idx)
-            if kind == "assistant" and not (content or "").strip() and not m.get("images") and not think:
+            if kind == "assistant" and not (content or "").strip() and not m.get("images") and not think and not m.get("compare"):
+                continue
+            if m.get("compare") and m.get("compare_results"):
+                try:
+                    self._render_compare_arena(self.chat_scroll, m)
+                except Exception:  # noqa: BLE001
+                    pass
                 continue
             self._render_grok_chat_bubble(
                 self.chat_scroll,
@@ -14528,6 +15008,11 @@ class AppWindow(ctk.CTk):
         except Exception:  # noqa: BLE001
             pass
         self._chat_render_transcript()
+
+        # P0.2: Compare / multi-model path (no tools)
+        if bool(getattr(self, "_compare_mode", False)):
+            self._chat_send_compare(text=text, hist=hist, user_sys="")
+            return
 
         prior = hist[:-1]
         terminal_on = bool(getattr(self, "chat_terminal_var", None) and self.chat_terminal_var.get())

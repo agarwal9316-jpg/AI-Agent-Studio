@@ -77,6 +77,7 @@ CHAT_CONTROLS: dict[str, dict[str, str]] = {
     "context": {"label": "Context…", "help": "Choose what the AI can see: which tools, files, and knowledge are active."},
     "more": {"label": "More…", "help": "Every extra power option: recipes, marketplace, system prompt, export and more."},
     "models": {"label": "Model", "help": "Choose which AI model answers. Bigger is often smarter; smaller is faster and cheaper."},
+    "compare": {"label": "Compare", "help": "Multi-model arena: pick 2–3 models, send one prompt, read parallel text replies side-by-side. Tools stay off to avoid chaos. Use this reply copies a winner into the main chat."},
     "live": {"label": "Live", "help": "Show a side panel with the AI's thinking, tool activity, and finished files."},
     "setup": {
         "label": "Setup",

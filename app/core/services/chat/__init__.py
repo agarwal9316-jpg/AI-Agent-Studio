@@ -7,6 +7,7 @@ from app.core.services.chat import chat_store
 from app.core.services.chat import media_chat
 from app.core.services.chat import memory_store
 from app.core.services.chat import orchestrator
+from app.core.services.chat import multimodel
 
 # Expose commonly used functions from chat module
 from app.core.services.chat.chat import (
@@ -24,6 +25,7 @@ __all__ = [
     "media_chat",
     "memory_store",
     "orchestrator",
+    "multimodel",
     "load_chat",
     "save_chat",
     "clear_chat",

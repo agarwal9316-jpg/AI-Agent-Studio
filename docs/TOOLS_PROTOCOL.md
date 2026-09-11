@@ -264,3 +264,19 @@ See [SELF_IMPROVE.md](SELF_IMPROVE.md).
 
 This is **not** the Grok Build TUI. Native: terminal, IMAGE_GEN, WEB_SEARCH, skills, MCP, browser, RAG, company queue.  
 Host-only elsewhere: spawn_subagent, .rhai workflows — use closest alternatives above.
+
+---
+
+## Multi-model Compare (arena) — tools off
+
+**Compare / Multi-model** mode (Chat → **Compare** chip, v1.27.87+) sends the same user prompt to 2–3 models in parallel.
+
+| Rule | Why |
+|------|-----|
+| **No tools** / no native `tools` schemas | Parallel tool-calling would race files, terminals, and approvals |
+| Text-only system note | Models are instructed to answer in prose only |
+| Soft-degrade | One model error still shows the other panes |
+| **Use this reply** | Copies the chosen answer into the normal chat thread (then tools work again in single-model Action mode) |
+
+Do not enable Action-mode tool loops while Compare is active.
+

@@ -1,7 +1,7 @@
 {
   "name": "AI Agent Studio",
-  "version": "1.27.86",
-  "notes": "P0.1 Structured OpenAI tool-calls (JSON) alongside text blocks \u2014 native role:tool round-trip",
+  "version": "1.27.87",
+  "notes": "P0.2 Multi-model parallel chat / arena (Compare) \u2014 text-only, soft-degrade",
   "download_url": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/latest",
   "source": "github"
 }

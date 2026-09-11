@@ -29,6 +29,7 @@
 - [x] Unverified claims / Stop kill / crash restore / export redaction  
 - [x] Work board  
 - [x] Structured OpenAI tool-calls (JSON) alongside text blocks (1.27.86)  
+- [x] Multi-model parallel chat / arena Compare (1.27.87)  
 - [ ] Filesystem sandbox profiles  
 - [ ] Virtualized long chat history  
 - [ ] Keep docs/ in sync on every release (process)  
