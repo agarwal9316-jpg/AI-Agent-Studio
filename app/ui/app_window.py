@@ -4912,8 +4912,10 @@ class AppWindow(ctk.CTk):
             **style_textbox(),
         )
         
-        # Task #12: scrollable artifacts list (buttons per item)
+        # Task #12 / P2.2: scrollable artifacts list (This turn + Saved library)
         self.artifacts_frame = ctk.CTkScrollableFrame(act, fg_color="transparent")
+        self._artifacts_library_mode = "turn"  # turn | saved
+        self._artifacts_search_var = ctk.StringVar(master=self, value="")
         
         # Thinking panel: collapsible per-step cards (current + raw)
         self.thinking_box = ctk.CTkTextbox(
@@ -8350,7 +8352,37 @@ class AppWindow(ctk.CTk):
             ctk.CTkButton(self.panel_toolbar, text="Copy", width=60, command=self._copy_agent_track).pack(side="left", padx=2)
             ctk.CTkButton(self.panel_toolbar, text="↻ Refresh", width=80, command=lambda: self._fill_agent_track_box()).pack(side="left", padx=2)
         elif mode == "Artifacts":
-            ctk.CTkButton(self.panel_toolbar, text="Clear", width=60, command=self._clear_artifacts_panel).pack(side="left", padx=2)
+            mode_var = getattr(self, "_artifacts_mode_seg_var", None)
+            if mode_var is None:
+                self._artifacts_mode_seg_var = ctk.StringVar(
+                    master=self,
+                    value="Saved" if getattr(self, "_artifacts_library_mode", "turn") == "saved" else "This turn",
+                )
+                mode_var = self._artifacts_mode_seg_var
+            else:
+                mode_var.set("Saved" if getattr(self, "_artifacts_library_mode", "turn") == "saved" else "This turn")
+
+            def _set_art_mode(v: str) -> None:
+                self._artifacts_library_mode = "saved" if v == "Saved" else "turn"
+                self._refresh_artifacts_panel()
+                self._build_panel_toolbar("Artifacts")
+
+            ctk.CTkSegmentedButton(
+                self.panel_toolbar,
+                values=["This turn", "Saved"],
+                variable=mode_var,
+                command=_set_art_mode,
+                width=160,
+                height=26,
+            ).pack(side="left", padx=2)
+            if getattr(self, "_artifacts_library_mode", "turn") == "turn":
+                ctk.CTkButton(
+                    self.panel_toolbar,
+                    text="Save all",
+                    width=70,
+                    command=self._save_all_turn_artifacts,
+                ).pack(side="left", padx=2)
+                ctk.CTkButton(self.panel_toolbar, text="Clear", width=60, command=self._clear_artifacts_panel).pack(side="left", padx=2)
             ctk.CTkButton(self.panel_toolbar, text="↻ Refresh", width=80, command=self._refresh_artifacts_panel).pack(side="left", padx=2)
         elif mode == "Thinking":
             ctk.CTkButton(self.panel_toolbar, text="Clear", width=60, command=self._clear_thinking_panel).pack(side="left", padx=2)
@@ -8968,175 +9000,28 @@ class AppWindow(ctk.CTk):
         except Exception as e:
             messagebox.showerror("Copy agent track", str(e), parent=self)
 
-    # --- Artifacts panel operations ---
+    # --- Artifacts panel operations (ephemeral turn + P2.2 Saved library) ---
     def _clear_artifacts_panel(self) -> None:
-        """Clear the artifacts panel."""
+        """Clear the artifacts panel (This turn view only)."""
         if hasattr(self, "artifacts_frame") and self.artifacts_frame.winfo_exists():
             for w in self.artifacts_frame.winfo_children():
                 try:
                     w.destroy()
-                except Exception:
+                except Exception:  # noqa: BLE001
                     pass
+            from app.ui.themes import UI as _UI
+
             ctk.CTkLabel(
                 self.artifacts_frame,
                 text="Artifacts cleared.\nNew artifacts will appear here.",
-                text_color="gray",
+                text_color=_UI["muted"],
+                justify="left",
             ).pack(anchor="w", padx=6, pady=8)
+        self._last_artifacts_bundle = {"ok": True, "count": 0, "items": [], "summary": "Cleared"}
         self.set_status("Artifacts panel cleared")
 
-    def _refresh_activity_panel(self) -> None:
-        """Refresh activity panel from log."""
-        if not hasattr(self, "activity_box") or not self.activity_box.winfo_exists():
-            return
-        from app.core.services.data.activity_log import get_text as _act_get
-        try:
-            self.activity_box.configure(state="normal")
-            self.activity_box.delete("1.0", "end")
-            text = _act_get() or "Activity appears here while tools run…"
-            self.activity_box.insert("1.0", text + "\n")
-            self.activity_box.configure(state="disabled")
-            self.activity_box.see("end")
-        except Exception:
-            pass
-
-    def _bind_activity_log(self) -> None:
-        from app.core.services.data.activity_log import add_listener
-
-        def on_line(line: str) -> None:
-            def ui() -> None:
-                try:
-                    if not self.winfo_exists():
-                        return
-                    box = getattr(self, "activity_box", None)
-                    if box is None:
-                        return
-                    try:
-                        if not box.winfo_exists():
-                            return
-                    except Exception:  # noqa: BLE001
-                        return
-                    # only append when Activity tab visible
-                    if getattr(self, "side_panel_mode", None) and self.side_panel_mode.get() != "Activity":
-                        return
-                    # Skip heavy Live append when panel is hidden (still logged in memory)
-                    if not bool(getattr(self, "_live_panel_visible", False)):
-                        return
-                    box.insert("end", line + "\n")
-                    box.see("end")
-                except Exception:  # noqa: BLE001
-                    # Widget may be destroyed mid-callback (page switch / app close)
-                    pass
-
-            self._ui_call(ui)
-
-        add_listener(on_line)
-
-    def _bind_agent_tracker(self) -> None:
-        from app.core.services.data.agent_tracker import add_listener
-
-        def on_change() -> None:
-            # Debounce: every LLM thinking step used to full-refresh the side panel → UI freeze
-            if not bool(getattr(self, "_live_panel_visible", False)):
-                return
-            if getattr(self, "side_panel_mode", None):
-                mode = self.side_panel_mode.get() or "Activity"
-                if mode == "Activity":
-                    # Activity tab is append-only via activity_log; skip full refresh
-                    return
-            aid = getattr(self, "_side_panel_refresh_after", None)
-            if aid is not None:
-                try:
-                    self.after_cancel(aid)
-                except Exception:  # noqa: BLE001
-                    pass
-
-            def run() -> None:
-                self._side_panel_refresh_after = None
-                try:
-                    if self.winfo_exists():
-                        self._refresh_side_panel()
-                except Exception:  # noqa: BLE001
-                    pass
-
-            try:
-                self._side_panel_refresh_after = self.after(400, run)
-            except Exception:  # noqa: BLE001
-                self._ui_call(run)
-
-        add_listener(on_change)
-
-    def _refresh_side_panel(self) -> None:
-        mode = "Activity"
-        if getattr(self, "side_panel_mode", None):
-            mode = self.side_panel_mode.get() or "Activity"
-        if not hasattr(self, "activity_box"):
-            return
-        # Hide all content panes first
-        try:
-            self.activity_box.grid_remove()
-        except Exception:  # noqa: BLE001
-            pass
-        try:
-            self.agent_track_box.grid_remove()
-        except Exception:  # noqa: BLE001
-            pass
-        try:
-            if hasattr(self, "artifacts_frame"):
-                self.artifacts_frame.grid_remove()
-        except Exception:  # noqa: BLE001
-            pass
-        try:
-            if hasattr(self, "thinking_box"):
-                self.thinking_box.grid_remove()
-        except Exception:  # noqa: BLE001
-            pass
-        try:
-            if hasattr(self, "thinking_list"):
-                self.thinking_list.grid_remove()
-        except Exception:  # noqa: BLE001
-            pass
-        try:
-            if hasattr(self, "terminal_box"):
-                self.terminal_box.grid_remove()
-        except Exception:  # noqa: BLE001
-            pass
-        try:
-            if hasattr(self, "think_toolbar"):
-                self.think_toolbar.grid_remove()
-        except Exception:  # noqa: BLE001
-            pass
-        # Show appropriate content and build toolbar
-        if mode == "Agents":
-            self.agent_track_box.grid(row=2, column=0, sticky="nsew", padx=6, pady=(0, 4))
-            self._fill_agent_track_box()
-            self._build_panel_toolbar("Agents")
-        elif mode == "Artifacts":
-            if hasattr(self, "artifacts_frame"):
-                self.artifacts_frame.grid(row=2, column=0, sticky="nsew", padx=6, pady=(0, 4))
-            self._refresh_artifacts_panel()
-            self._build_panel_toolbar("Artifacts")
-        elif mode == "Thinking":
-            if hasattr(self, "thinking_list"):
-                self.thinking_list.grid(row=2, column=0, sticky="nsew", padx=6, pady=(0, 4))
-            elif hasattr(self, "thinking_box"):
-                self.thinking_box.grid(row=2, column=0, sticky="nsew", padx=6, pady=(0, 4))
-            self._refresh_thinking_panel()
-            self._build_panel_toolbar("Thinking")
-        elif mode == "Terminal":
-            if hasattr(self, "terminal_box"):
-                self.terminal_box.grid(row=2, column=0, sticky="nsew", padx=6, pady=(0, 4))
-            self._refresh_terminal_panel()
-            self._build_panel_toolbar("Terminal")
-        else:
-            self.activity_box.grid(row=2, column=0, sticky="nsew", padx=6, pady=(0, 4))
-            self._build_panel_toolbar("Activity")
-
-    def _refresh_thinking_panel(self) -> None:
-        """Sync collapsible step cards in the Live → Thinking tab."""
-        self._thinking_sync_cards()
-
     def _refresh_artifacts_panel(self) -> None:
-        """Task #12: list files/images/reports/diffs for this chat turn."""
+        """List This-turn artifacts or Saved library (P2.2)."""
         from app.ui.themes import style_chrome_button, UI as _UI
         from app.services import artifacts as arts
 
@@ -9147,6 +9032,12 @@ class AppWindow(ctk.CTk):
                 w.destroy()
             except Exception:  # noqa: BLE001
                 pass
+
+        mode = getattr(self, "_artifacts_library_mode", "turn")
+        if mode == "saved":
+            self._render_saved_artifacts_library(_UI, style_chrome_button)
+            return
+
         chat = getattr(self, "_chat_state", None) or {}
         try:
             bundle = arts.collect_artifacts(
@@ -9180,7 +9071,8 @@ class AppWindow(ctk.CTk):
                 text=(
                     "Nothing yet.\n"
                     "Images, file edits, research reports,\n"
-                    "and attachments show up here."
+                    "and attachments show up here.\n"
+                    "Use Save to keep them in Saved."
                 ),
                 text_color=_UI["muted"],
                 justify="left",
@@ -9262,6 +9154,292 @@ class AppWindow(ctk.CTk):
                     command=lambda p=path: self._open_image_lightbox(p),
                     **style_chrome_button(),
                 ).pack(side="left", padx=2)
+            ctk.CTkButton(
+                btns,
+                text="Save",
+                width=50,
+                height=24,
+                command=lambda item=it: self._save_turn_artifact(item),
+                **style_chrome_button(primary=True),
+            ).pack(side="left", padx=2)
+
+    def _render_saved_artifacts_library(self, _UI, style_chrome_button) -> None:
+        """P2.2 Saved library: search / open / reveal / export / delete."""
+        from app.core.services.misc import artifacts_store as astore
+
+        status = astore.store_status()
+        head = ctk.CTkFrame(self.artifacts_frame, fg_color="transparent")
+        head.pack(fill="x", padx=4, pady=(4, 2))
+        ctk.CTkLabel(
+            head,
+            text=f"Saved library · {status.get('count', 0)}",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color=_UI["label"],
+            anchor="w",
+        ).pack(fill="x")
+        if not status.get("ok"):
+            ctk.CTkLabel(
+                self.artifacts_frame,
+                text=str(status.get("note") or "Store unavailable (soft-degrade)"),
+                text_color=_UI["muted"],
+                wraplength=220,
+                justify="left",
+                anchor="w",
+            ).pack(fill="x", padx=6, pady=4)
+
+        search_row = ctk.CTkFrame(self.artifacts_frame, fg_color="transparent")
+        search_row.pack(fill="x", padx=4, pady=4)
+        if not hasattr(self, "_artifacts_search_var"):
+            self._artifacts_search_var = ctk.StringVar(master=self, value="")
+        entry = ctk.CTkEntry(
+            search_row,
+            textvariable=self._artifacts_search_var,
+            placeholder_text="Search saved…",
+            height=28,
+            width=160,
+        )
+        entry.pack(side="left", fill="x", expand=True, padx=(0, 4))
+        ctk.CTkButton(
+            search_row,
+            text="Go",
+            width=40,
+            height=28,
+            command=self._refresh_artifacts_panel,
+            **style_chrome_button(),
+        ).pack(side="left")
+
+        q = ""
+        try:
+            q = str(self._artifacts_search_var.get() or "")
+        except Exception:  # noqa: BLE001
+            q = ""
+        try:
+            items = astore.list_artifacts(query=q)
+        except Exception as e:  # noqa: BLE001
+            ctk.CTkLabel(
+                self.artifacts_frame,
+                text=f"Saved library error: {e}",
+                text_color=_UI["muted"],
+            ).pack(anchor="w", padx=6, pady=8)
+            return
+
+        if not items:
+            ctk.CTkLabel(
+                self.artifacts_frame,
+                text=(
+                    "No saved artifacts yet.\n"
+                    "Open This turn → Save on an item,\n"
+                    "or Save all. Survives restarts."
+                ),
+                text_color=_UI["muted"],
+                justify="left",
+                anchor="w",
+            ).pack(anchor="w", padx=6, pady=8)
+            return
+
+        icons = {
+            "image": "🖼",
+            "video": "🎬",
+            "diff": "📄",
+            "report": "📑",
+            "code": "💻",
+            "file": "📎",
+            "link": "🔗",
+        }
+        for it in items[:60]:
+            kind = str(it.get("kind") or "file")
+            title = str(it.get("title") or kind)
+            if len(title) > 34:
+                title = title[:31] + "…"
+            row = ctk.CTkFrame(self.artifacts_frame, fg_color=("gray92", "gray18"), corner_radius=8)
+            row.pack(fill="x", pady=3, padx=2)
+            ctk.CTkLabel(
+                row,
+                text=f"{icons.get(kind, '•')} {title}",
+                anchor="w",
+                text_color=_UI["label"],
+                font=ctk.CTkFont(size=11),
+            ).pack(fill="x", padx=6, pady=(4, 0))
+            meta_bits = [str(it.get("mime") or ""), f"{int(it.get('size') or 0)} B"]
+            tags = it.get("tags") or []
+            if tags:
+                meta_bits.append(", ".join(str(t) for t in tags[:4]))
+            created = str(it.get("created_at") or "")[:19].replace("T", " ")
+            if created:
+                meta_bits.append(created)
+            ctk.CTkLabel(
+                row,
+                text=" · ".join(b for b in meta_bits if b),
+                anchor="w",
+                text_color=_UI["muted"],
+                font=ctk.CTkFont(size=9),
+                wraplength=220,
+            ).pack(fill="x", padx=6)
+            btns = ctk.CTkFrame(row, fg_color="transparent")
+            btns.pack(fill="x", padx=4, pady=(2, 4))
+            aid = str(it.get("id") or "")
+            ctk.CTkButton(
+                btns,
+                text="Open",
+                width=48,
+                height=24,
+                command=lambda i=aid: self._open_saved_artifact(i),
+                **style_chrome_button(primary=True),
+            ).pack(side="left", padx=2)
+            ctk.CTkButton(
+                btns,
+                text="Reveal",
+                width=54,
+                height=24,
+                command=lambda i=aid: self._reveal_saved_artifact(i),
+                **style_chrome_button(),
+            ).pack(side="left", padx=2)
+            ctk.CTkButton(
+                btns,
+                text="Export",
+                width=54,
+                height=24,
+                command=lambda i=aid: self._export_saved_artifact(i),
+                **style_chrome_button(),
+            ).pack(side="left", padx=2)
+            ctk.CTkButton(
+                btns,
+                text="Del",
+                width=40,
+                height=24,
+                command=lambda i=aid: self._delete_saved_artifact(i),
+                **style_chrome_button(),
+            ).pack(side="left", padx=2)
+
+    def _save_turn_artifact(self, item: dict) -> None:
+        from app.core.services.misc import artifacts_store as astore
+
+        chat = getattr(self, "_chat_state", None) or {}
+        try:
+            res = astore.save_from_turn_item(item, chat_id=str(chat.get("id") or ""))
+        except Exception as e:  # noqa: BLE001
+            self.set_status(f"Save soft-degrade: {e}", toast=True)
+            return
+        if res.get("ok"):
+            title = (res.get("artifact") or {}).get("title") or "artifact"
+            self.set_status(f"Saved · {title}", toast=True)
+        else:
+            self.set_status(str(res.get("note") or "Save failed"), toast=True)
+
+    def _save_all_turn_artifacts(self) -> None:
+        bundle = getattr(self, "_last_artifacts_bundle", None) or {}
+        items = list(bundle.get("items") or [])
+        if not items:
+            # refresh first
+            self._artifacts_library_mode = "turn"
+            self._refresh_artifacts_panel()
+            bundle = getattr(self, "_last_artifacts_bundle", None) or {}
+            items = list(bundle.get("items") or [])
+        if not items:
+            self.set_status("Nothing to save this turn", toast=True)
+            return
+        from app.core.services.misc import artifacts_store as astore
+
+        chat = getattr(self, "_chat_state", None) or {}
+        ok_n = 0
+        fail_n = 0
+        for it in items:
+            try:
+                res = astore.save_from_turn_item(it, chat_id=str(chat.get("id") or ""))
+                if res.get("ok"):
+                    ok_n += 1
+                else:
+                    fail_n += 1
+            except Exception:  # noqa: BLE001
+                fail_n += 1
+        self.set_status(f"Saved {ok_n} artifact(s)" + (f" · {fail_n} skipped" if fail_n else ""), toast=True)
+        if ok_n:
+            self._artifacts_library_mode = "saved"
+            if hasattr(self, "_artifacts_mode_seg_var"):
+                try:
+                    self._artifacts_mode_seg_var.set("Saved")
+                except Exception:  # noqa: BLE001
+                    pass
+            self._refresh_artifacts_panel()
+            self._build_panel_toolbar("Artifacts")
+
+    def _open_saved_artifact(self, artifact_id: str) -> None:
+        from app.core.services.misc import artifacts_store as astore
+
+        art = astore.get_artifact(artifact_id)
+        if not art:
+            self.set_status("Artifact not found", toast=True)
+            return
+        p = astore.resolve_path(art)
+        if p is None:
+            self.set_status("Stored file missing on disk", toast=True)
+            return
+        self._open_artifact_path(str(p))
+
+    def _reveal_saved_artifact(self, artifact_id: str) -> None:
+        import os
+        import subprocess
+        import sys
+        from app.core.services.misc import artifacts_store as astore
+
+        art = astore.get_artifact(artifact_id)
+        if not art:
+            self.set_status("Artifact not found", toast=True)
+            return
+        p = astore.resolve_path(art)
+        if p is None:
+            self.set_status("Stored file missing on disk", toast=True)
+            return
+        try:
+            if sys.platform.startswith("win"):
+                subprocess.Popen(["explorer", "/select,", str(p)])
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", "-R", str(p)])
+            else:
+                subprocess.Popen(["xdg-open", str(p.parent)])
+            self.set_status(f"Revealed {p.name}", toast=True)
+        except Exception as e:  # noqa: BLE001
+            try:
+                self._open_artifact_path(str(p))
+            except Exception:  # noqa: BLE001
+                self.set_status(f"Reveal failed: {e}", toast=True)
+
+    def _export_saved_artifact(self, artifact_id: str) -> None:
+        from tkinter import filedialog
+        from app.core.services.misc import artifacts_store as astore
+
+        art = astore.get_artifact(artifact_id)
+        if not art:
+            self.set_status("Artifact not found", toast=True)
+            return
+        src = astore.resolve_path(art)
+        default_name = src.name if src else (str(art.get("title") or "artifact") + ".bin")
+        dest = filedialog.asksaveasfilename(
+            parent=self,
+            title="Export artifact",
+            initialfile=default_name,
+        )
+        if not dest:
+            return
+        res = astore.export_artifact(artifact_id, dest)
+        if res.get("ok"):
+            self.set_status(f"Exported → {Path(res.get('path') or dest).name}", toast=True)
+        else:
+            self.set_status(str(res.get("note") or "Export failed"), toast=True)
+
+    def _delete_saved_artifact(self, artifact_id: str) -> None:
+        from app.core.services.misc import artifacts_store as astore
+
+        art = astore.get_artifact(artifact_id)
+        title = (art or {}).get("title") or artifact_id[:8]
+        if not messagebox.askyesno("Delete artifact", f"Delete saved artifact?\n\n{title}", parent=self):
+            return
+        res = astore.delete_artifact(artifact_id)
+        if res.get("ok"):
+            self.set_status("Deleted", toast=True)
+            self._refresh_artifacts_panel()
+        else:
+            self.set_status(str(res.get("note") or "Delete failed"), toast=True)
 
     def _open_artifact_path(self, path: str) -> None:
         p = (path or "").strip()

@@ -1,7 +1,7 @@
 {
   "name": "AI Agent Studio",
-  "version": "1.27.94",
-  "notes": "P2.1 Better voice \u2014 OpenAI Whisper STT + OpenAI/ElevenLabs TTS APIs; local soft-degrade; Settings engine pickers + Test STT/TTS",
+  "version": "1.27.95",
+  "notes": "P2.2 Artifacts persistent store \u2014 Saved library under data/artifacts/; save-from-turn; open/reveal/export/delete/search; soft-degrade",
   "download_url": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/latest",
   "source": "github"
 }

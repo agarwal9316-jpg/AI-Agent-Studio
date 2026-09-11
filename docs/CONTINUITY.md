@@ -1,6 +1,6 @@
 # Continuity — resume without chat history
 
-**Head:** 1.27.94 — P2.1 Better voice (branch `feat/owui-p2-voice`).
+**Head:** 1.27.95 — P2.2 Artifacts persistent store (branch `feat/owui-p2-artifacts`).
 
 
 **Goal:** After months, open the project folder and continue.
@@ -25,7 +25,8 @@
 
 ## Resume here (update every release)
 
-- **Last version:** **1.27.94** (P2.1 Better voice — Whisper STT + OpenAI/ElevenLabs TTS; local soft-degrade)
+- **Last version:** **1.27.95** (P2.2 Artifacts persistent store — Live Artifacts This turn/Saved; `data/artifacts/`; soft-degrade)
+- **Prior:** **1.27.94** (P2.1 Better voice — Whisper STT + OpenAI/ElevenLabs TTS; local soft-degrade)
 - **Recent (1.27.7–1.27.34):**
   - Chat delete reliability + title repair; **OS-only** min/max/close (no duplicate chrome)
   - **Org chart:** pan/drag view, expand/collapse teams, Reset → CEO top; continuous connectors; soft-select (no click flicker)

@@ -213,3 +213,15 @@ Chat composer 🎤 / 🔊 and auto-read-aloud use the selected engines; soft-deg
 
 Background ticker (daemon thread) fires due jobs while the app runs. Separate from Company **Schedule**.
 
+
+## Artifacts panel (1.27.95 / #12)
+
+Live side panel → **Artifacts** segmented **This turn | Saved**.
+
+| Control | Role |
+|---------|------|
+| This turn | Ephemeral files/images/diffs/reports from chat (Task #12) |
+| Save / Save all | Copy into durable `data/artifacts/` library |
+| Saved | Search · Open · Reveal · Export · Delete |
+| Soft-degrade | Disk errors show muted note; chat never crashes |
+

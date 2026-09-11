@@ -24,7 +24,7 @@ Last updated: 2026-09-11 · App version: **1.27.85**
 | 9 | **Pause/resume** long agent runs + background jobs | P1 | **done** | Chat Pause + Team Pause · 1.25.9 |
 | 10 | Installer / **auto-update** or clear version-check UX | P1 | **done** | About/Settings version check · 1.26.0 |
 | 11 | Prompt library / system presets per project | P1 | **done** | presets + project bind · 1.26.0 |
-| 12 | Artifacts panel (files/images/reports this turn) | P1 | **done** | Live → Artifacts · 1.26.1 |
+| 12 | Artifacts panel (files/images/reports this turn) | P1 | **done** | Live → Artifacts · 1.26.1 · persistent Saved library 1.27.95 |
 | 13 | Global hotkey: ask about clipboard/selection | P1 | **done** | Ctrl+Shift+G · 1.26.1 |
 | 14 | Parallel agents with budget/time caps | P1 | **done** | PARALLEL_AGENTS + caps · 1.26.2 |
 | 15 | Sandbox / cwd lock per chat | P1 | **done** | cwd lock 🔒 · 1.26.2 |

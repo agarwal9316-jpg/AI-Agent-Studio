@@ -10,6 +10,7 @@ data/tasks/
 data/runs/
 data/chats/
 data/notes/
+data/artifacts/
 data/channels/
 data/browser_profile/
 data/logs/

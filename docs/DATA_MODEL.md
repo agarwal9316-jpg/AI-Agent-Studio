@@ -38,6 +38,9 @@ data/
   projects/*.json
   project_outputs/<project_id>/
   memory/memory.json
+  artifacts/
+    index.json             # P2.2 Saved library meta
+    blobs/<id>/<file>      # copied artifact bytes
   knowledge/rag.sqlite
   backups/self_improve/*.zip + *.json
   chat_media/<chat_id>/
@@ -178,6 +181,18 @@ auto_approved?, …
 
 Close app → delete `data/` (and optionally `browsers/` to re-download Chromium).
 
+
+
+
+## Artifacts persistent store (1.27.95)
+
+Directory: `data/artifacts/`
+
+- `index.json` → `{ items: [ { id, chat_id, title, path, mime, kind, size, source_path, created_at, tags } ], updated_at }`
+- `blobs/<id>/<filename>` — durable copy of the file (survives restarts)
+
+Personal scope (single-user Studio). Soft-degrades on disk errors (UI keeps working; save/list returns empty/error note).
+Ephemeral Live → Artifacts (This turn) remains in-memory from chat/messages; **Save** copies into this store.
 
 ## Automations (1.27.92)
 

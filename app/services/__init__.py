@@ -41,6 +41,7 @@ from app.core.services.llm import providers
 from app.core.services.llm import model_profiles
 from app.core.services.llm import ollama_local
 from app.core.services.misc import artifacts
+from app.core.services.misc import artifacts_store
 from app.core.services.misc import patch_review
 from app.core.services.misc import prompt_library
 from app.core.services.misc import workflow_graph
@@ -92,6 +93,7 @@ __all__ = [
     "model_profiles",
     "ollama_local",
     "artifacts",
+    "artifacts_store",
     "patch_review",
     "prompt_library",
     "self_improve",

@@ -69,6 +69,13 @@ def notes_dir() -> Path:
     return d
 
 
+def artifacts_dir() -> Path:
+    """Persistent turn artifacts library (OWUI-inspired P2.2)."""
+    d = data_dir() / "artifacts"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
 def channels_dir() -> Path:
     """Workspace channels timeline (OWUI-inspired P1.2). Separate from team_channels."""
     d = data_dir() / "channels"
