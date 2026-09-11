@@ -17,6 +17,7 @@ FRIENDLY_PAGE: dict[str, str] = {
     "Settings": "Settings",
     "Org chart": "Team setup",
     "Knowledge": "My files",
+    "Notes": "My notes",
     "Work": "Work list",
     "Approvals": "Approvals",
     "Chats": "Past chats",
@@ -42,6 +43,7 @@ PAGE_BLURB: dict[str, str] = {
     "Models": "Create your own AI with the green button. No coding needed.",
     "Monitor": "See if the AI is busy, using the internet, or training. Refresh if unsure.",
     "Help": "Short guides in plain English. Or go back to Start.",
+    "Notes": "Write notes. Attach them to chat so the AI reads the whole note.",
     "Settings": "Only change the connection key if the AI cannot answer. Leave other options alone.",
 }
 

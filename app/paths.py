@@ -62,6 +62,13 @@ def memory_path() -> Path:
     return d / "memory.json"
 
 
+def notes_dir() -> Path:
+    """Markdown/plain notes workspace (OWUI-inspired P1.1)."""
+    d = data_dir() / "notes"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
 def projects_dir() -> Path:
     d = data_dir() / "projects"
     d.mkdir(parents=True, exist_ok=True)

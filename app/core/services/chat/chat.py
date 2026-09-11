@@ -724,6 +724,7 @@ def send_user_message(
     is_paused: Callable[[], bool] | None = None,
     ask_large_file: Callable[[str, int], str] | None = None,
     ask_large_output: Callable[[int, str], str] | None = None,
+    attached_note_ids: list[str] | None = None,
 ) -> tuple[list[dict[str, Any]], str]:
     cfg = load_config()
     # Max LLM context use: upgrade legacy low windows, keep user overrides
@@ -760,9 +761,16 @@ def send_user_message(
     exec_mcp = mcp_enabled and mode == "action"
     exec_laptop = laptop_enabled and mode == "action"
 
-    content = compose_user_content(
-        user_text, attachment_paths, ask_large=ask_large_file
-    )
+    note_ids = [str(i).strip() for i in (attached_note_ids or []) if str(i).strip()]
+    try:
+        content = compose_user_content(
+            user_text, attachment_paths, ask_large=ask_large_file
+        )
+    except LLMError:
+        if note_ids:
+            content = (user_text or "").strip() or "(See attached notes.)"
+        else:
+            raise
     hist: list[dict[str, Any]] = list(history or [])
     hist.append(
         {
@@ -770,6 +778,7 @@ def send_user_message(
             "content": content,
             "at": _now(),
             "attachments": list(attachment_paths or []),
+            "attached_notes": list(note_ids),
             "mode": mode,
         }
     )
@@ -1012,6 +1021,25 @@ def send_user_message(
                 n_miss = len(hash_res) - n_ok
                 _prep(
                     f"Hash inject · {n_ok} loaded"
+                    + (f", {n_miss} unresolved" if n_miss else "")
+                )
+            except Exception:  # noqa: BLE001
+                pass
+    except Exception:  # noqa: BLE001
+        pass
+
+    # P1.1: Attached notes → full-context inject (OWUI-inspired)
+    try:
+        from app.core.services.chat.notes_store import build_attach_context_block
+
+        note_block, note_res = build_attach_context_block(note_ids)
+        if note_block:
+            full_system = full_system + "\n\n" + note_block
+            try:
+                n_ok = sum(1 for r in note_res if r.get("ok"))
+                n_miss = len(note_res) - n_ok
+                _prep(
+                    f"Notes attach · {n_ok} loaded"
                     + (f", {n_miss} unresolved" if n_miss else "")
                 )
             except Exception:  # noqa: BLE001

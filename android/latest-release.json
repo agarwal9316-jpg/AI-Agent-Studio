@@ -1,8 +1,8 @@
 {
-  "tag": "v1.27.89",
-  "versionName": "1.27.89",
-  "versionCode": 89,
-  "apkUrl": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/download/v1.27.89/AI-Agent-Studio-1.27.89-debug.apk",
-  "htmlUrl": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/tag/v1.27.89",
-  "notes": "1.27.89 - Open WebUI–inspired P0: native tool_calls, multi-model Compare, # doc/URL inject, Hybrid RAG BM25+RRF. Portable PC + Android companion."
+  "tag": "v1.27.90",
+  "versionName": "1.27.90",
+  "versionCode": 90,
+  "apkUrl": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/download/v1.27.90/AI-Agent-Studio-1.27.90-debug.apk",
+  "htmlUrl": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/tag/v1.27.90",
+  "notes": "1.27.90 - P1.1 Notes workspace: sidebar Notes, attach-to-chat full-context inject, AI rewrite soft-degrade. Portable PC + Android companion."
 }

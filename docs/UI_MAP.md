@@ -1,7 +1,7 @@
 # UI Map
 
 **Toolkit:** CustomTkinter  
-**Version:** 1.27.18 (keep in sync with `app/version.py`)
+**Version:** 1.27.90 (keep in sync with `app/version.py`)
 
 ---
 
@@ -17,7 +17,7 @@
 
 ### Sidebar pages (typical order)
 
-Chat · Home · Agents · Tasks · Runs · Chats · Memory · Projects · Company · CEO · Workflow · Knowledge · Approvals · Patches · Schedule · Usage · Settings · About  
+Chat · Home · Agents · Tasks · Runs · Chats · Memory · Projects · Company · CEO · Workflow · Knowledge · Notes · Approvals · Patches · Schedule · Usage · Settings · About  
 
 *(Exact labels come from `app_window` nav construction.)*
 
@@ -152,3 +152,18 @@ Chrome colors from `app/services/themes.py` → `UI` + `style_*` helpers (forced
 
 Settings → theme names from `themes.THEMES` (Readable Dark/Light recommended).  
 Chat chrome always uses explicit `UI` colors so text stays readable.
+
+
+---
+
+## Notes page (1.27.90)
+
+| Control | Role |
+|---------|------|
+| Search | Filter title/body |
+| New / list | Create + select notes |
+| Title + body | Markdown/plain editor |
+| Save / Delete | Persist under `data/notes/` |
+| Attach to chat | Chip on Chat composer → full-context inject next send |
+| AI rewrite | Optional LLM rewrite of selection (soft-degrade if no key) |
+

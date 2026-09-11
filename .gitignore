@@ -9,6 +9,7 @@ data/agents/
 data/tasks/
 data/runs/
 data/chats/
+data/notes/
 data/browser_profile/
 data/logs/
 data/*.png

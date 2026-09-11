@@ -1,6 +1,6 @@
 # Feature inventory
 
-**Version:** 1.27.89  
+**Version:** 1.27.90  
 **Maintained here** (root `FEATURES.md` is a pointer).  
 **History:** [CHANGELOG.md](CHANGELOG.md) · resume [CONTINUITY.md](CONTINUITY.md)
 
@@ -23,6 +23,7 @@
 | Multi-model compare / arena | Yes | Chat **Compare** chip · `multimodel` · 2–3 parallel text replies · 1.27.87 |
 | `#` doc + URL inject | Yes | Composer `#token` · `hash_inject` · knowledge/file/URL · soft-degrade · 1.27.88 |
 | Hybrid RAG (BM25 + embeddings + RRF) | Yes | Settings toggle (default ON) · `rag_knowledge.hybrid_search` · soft-degrade · 1.27.89 |
+| Notes workspace + attach to chat | Yes | Sidebar **Notes** · `notes_store` · chips · full-context inject · AI rewrite soft-degrade · 1.27.90 |
 | Launch always-visible (no stuck hide) | Yes | theme pre-apply · force deiconify · no alpha-0 |
 | Browser headless→headed anti-bot fallback | Yes | `browser_tool` · captcha wait |
 | Perchance image path (portable Chromium) | Yes | `perchance_image` · may still hit site anti-bot |

@@ -15,6 +15,7 @@ from app.core.services import web
 # Direct exports that don't cause circular imports
 from app.core.services.chat import chat_store
 from app.core.services.chat import memory_store
+from app.core.services.chat import notes_store
 from app.core.services.company import company_store
 from app.core.services.company import org_comms
 from app.core.services.company import org_tools
@@ -66,6 +67,7 @@ __all__ = [
     # Direct exports
     "chat_store",
     "memory_store",
+    "notes_store",
     "company_store",
     "org_comms",
     "org_tools",

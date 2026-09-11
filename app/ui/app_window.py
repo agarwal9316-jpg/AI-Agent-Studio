@@ -88,6 +88,7 @@ from app.core.services.chat.orchestrator import get_orchestrator
 from app.core.services.misc.runner import run_pipeline
 from app.core.services.tools.skills_registry import discover_skills
 from app.ui import mgmt_pages
+from app.ui.pages import notes_page
 from app.version import APP_NAME, __version__
 
 NAV_ITEMS = (
@@ -103,6 +104,7 @@ NAV_ITEMS = (
     "Approvals",
     "Patches",
     "Knowledge",
+    "Notes",
     "Schedule",
     "Org chart",
     "Memory",
@@ -293,6 +295,7 @@ class AppWindow(ctk.CTk):
         }
         self._team_ui_on_progress = None
         self._chat_attachments: list[str] = []
+        self._chat_attached_notes: list[str] = []  # note ids for next-send inject
         self._chat_terminal_cwd = str(app_root())
         # Thread → UI bridge (Tk is not thread-safe; never touch widgets from workers)
         import queue as _queue
@@ -1101,7 +1104,7 @@ class AppWindow(ctk.CTk):
             ]
         return [
             ("PRIMARY", ("Home", "Chat", "Team", "Models", "Monitor", "Help")),
-            ("WORKSPACE", ("Work", "Approvals", "Knowledge", "Org chart")),
+            ("WORKSPACE", ("Work", "Approvals", "Knowledge", "Notes", "Org chart")),
             (
                 "MORE",
                 (
@@ -2939,6 +2942,7 @@ class AppWindow(ctk.CTk):
             "Approvals": self._page_approvals,
             "Patches": self._page_patches,
             "Knowledge": self._page_knowledge,
+            "Notes": lambda: notes_page.page_notes(self),
             "Schedule": self._page_schedule,
             "Memory": lambda: mgmt_pages.page_memory(self),
             "Projects": lambda: mgmt_pages.page_projects(self),
@@ -5163,6 +5167,12 @@ class AppWindow(ctk.CTk):
         )
         self.chat_attach_label.pack(fill="x", padx=side_pad + 6, pady=(2, 0))
         self.chat_status = self.chat_attach_label
+        self._note_chips_host = ctk.CTkFrame(composer_outer, fg_color="transparent")
+        self._note_chips_host.pack(fill="x", padx=side_pad + 6, pady=(0, 0))
+        try:
+            self._refresh_note_attach_chips()
+        except Exception:  # noqa: BLE001
+            pass
         tip = (
             "Enter send · Shift+Enter newline · ＋ tools · right-click chats to pin/delete"
             if self._is_simple_ui()
@@ -6578,7 +6588,8 @@ class AppWindow(ctk.CTk):
         n = len(self._chat_attachments or [])
         ni = len(getattr(self, "_pending_images", []) or [])
         nv = len(getattr(self, "_pending_videos", []) or [])
-        if not n and not ni and not nv:
+        nn = len(getattr(self, "_chat_attached_notes", None) or [])
+        if not n and not ni and not nv and not nn:
             return "no attaches"
         parts = []
         if n:
@@ -6587,6 +6598,8 @@ class AppWindow(ctk.CTk):
             parts.append(f"{ni} img")
         if nv:
             parts.append(f"{nv} vid")
+        if nn:
+            parts.append(f"{nn} note(s)")
         return ", ".join(parts)
 
     def _ensure_live_monitor_open(self, tab: str = "Terminal") -> None:
@@ -7565,14 +7578,28 @@ class AppWindow(ctk.CTk):
         )
 
     def _attachments_summary(self) -> str:
-        if not self._chat_attachments:
+        files = list(self._chat_attachments or [])
+        notes = list(getattr(self, "_chat_attached_notes", None) or [])
+        if not files and not notes:
             return (
-                "Attachments: (none) — Attach files… | "
+                "Attachments: (none) — Attach files… / notes via ＋ or Notes page | "
                 "Large files will ask what to include | "
                 "Terminal/Skills/MCP ON by default; Safety limits OFF"
             )
-        names = [Path(p).name for p in self._chat_attachments]
-        return "Attachments: " + ", ".join(names)
+        parts: list[str] = []
+        if files:
+            parts.append("files: " + ", ".join(Path(p).name for p in files))
+        if notes:
+            try:
+                from app.core.services.chat import notes_store as _ns
+                titles = []
+                for nid in notes:
+                    n = _ns.get_note(nid)
+                    titles.append((n or {}).get("title") or nid[:8])
+                parts.append("notes: " + ", ".join(titles))
+            except Exception:  # noqa: BLE001
+                parts.append("notes: " + ", ".join(notes))
+        return "Attachments: " + " · ".join(parts)
 
     def _ask_on_ui_thread(self, fn: Callable[[], Any], default: Any = None) -> Any:
         """Run a UI dialog from a worker thread and wait for the result."""
@@ -7722,6 +7749,131 @@ class AppWindow(ctk.CTk):
                 self._chat_attachments.append(p)
         self._refresh_attach_label()
         self.set_status(f"Attached {len(paths)} file(s)")
+
+
+    def attach_note_to_chat(self, note_id: str) -> None:
+        """Attach a note id for full-context inject on the next chat send."""
+        nid = (note_id or "").strip()
+        if not nid:
+            return
+        notes = list(getattr(self, "_chat_attached_notes", None) or [])
+        if nid not in notes:
+            notes.append(nid)
+        self._chat_attached_notes = notes
+        try:
+            self._refresh_note_attach_chips()
+        except Exception:  # noqa: BLE001
+            pass
+        try:
+            self._refresh_attach_label()
+        except Exception:  # noqa: BLE001
+            pass
+
+    def detach_note_from_chat(self, note_id: str) -> None:
+        nid = (note_id or "").strip()
+        notes = [n for n in (getattr(self, "_chat_attached_notes", None) or []) if n != nid]
+        self._chat_attached_notes = notes
+        try:
+            self._refresh_note_attach_chips()
+        except Exception:  # noqa: BLE001
+            pass
+        try:
+            self._refresh_attach_label()
+        except Exception:  # noqa: BLE001
+            pass
+
+    def _chat_attach_note_dialog(self) -> None:
+        """Pick one or more notes to attach for the next send."""
+        from app.core.services.chat import notes_store
+        from app.ui.themes import style_chrome_button, style_entry
+
+        items = notes_store.list_notes()
+        if not items:
+            messagebox.showinfo(
+                "Attach note",
+                "No notes yet. Open Notes (sidebar → Workspace) and create one first.",
+                parent=self,
+            )
+            return
+        win = ctk.CTkToplevel(self)
+        win.title("Attach note(s)")
+        win.geometry("420x460")
+        win.transient(self)
+        win.grab_set()
+        ctk.CTkLabel(
+            win,
+            text="Attach notes → next chat send (full context)",
+            font=ctk.CTkFont(weight="bold"),
+        ).pack(anchor="w", padx=12, pady=(12, 6))
+        qvar = ctk.StringVar(value="")
+        entry = ctk.CTkEntry(win, textvariable=qvar, placeholder_text="Filter…", **style_entry())
+        entry.pack(fill="x", padx=12, pady=4)
+        box = ctk.CTkScrollableFrame(win, height=320)
+        box.pack(fill="both", expand=True, padx=12, pady=6)
+        vars_by_id: dict[str, Any] = {}
+
+        def rebuild(*_a: Any) -> None:
+            for w in box.winfo_children():
+                w.destroy()
+            q = qvar.get().strip().lower()
+            for it in items:
+                title = it.get("title") or "Untitled"
+                hay = f"{title}\n{it.get('body') or ''}".lower()
+                if q and q not in hay:
+                    continue
+                var = vars_by_id.get(it["id"])
+                if var is None:
+                    var = ctk.BooleanVar(value=it["id"] in (getattr(self, "_chat_attached_notes", None) or []))
+                    vars_by_id[it["id"]] = var
+                ctk.CTkCheckBox(box, text=title[:80], variable=var).pack(anchor="w", pady=2)
+
+        qvar.trace_add("write", rebuild)
+        rebuild()
+
+        def apply() -> None:
+            for nid, var in vars_by_id.items():
+                if var.get():
+                    self.attach_note_to_chat(nid)
+                else:
+                    self.detach_note_from_chat(nid)
+            win.destroy()
+            n = len(getattr(self, "_chat_attached_notes", None) or [])
+            self.set_status(f"Attached notes: {n}", toast=True)
+
+        ctk.CTkButton(win, text="Apply", command=apply, **style_chrome_button(primary=True)).pack(pady=8)
+
+    def _refresh_note_attach_chips(self) -> None:
+        """Show / refresh attached-note chips under the composer."""
+        from app.core.services.chat import notes_store
+        from app.ui.themes import style_chrome_button, UI as _UI
+
+        host = getattr(self, "_note_chips_host", None)
+        if host is None or not str(getattr(host, "winfo_exists", lambda: 0)()):
+            return
+        for w in host.winfo_children():
+            try:
+                w.destroy()
+            except Exception:  # noqa: BLE001
+                pass
+        ids = list(getattr(self, "_chat_attached_notes", None) or [])
+        if not ids:
+            return
+        ctk.CTkLabel(host, text="Notes:", text_color=_UI["muted"], width=48).pack(side="left", padx=(0, 4))
+        for nid in ids:
+            note = notes_store.get_note(nid)
+            title = (note or {}).get("title") or (nid[:8] + "…")
+            chip = ctk.CTkFrame(host, fg_color=_UI.get("top_bg", ("#e5e7eb", "#1f2937")), corner_radius=12)
+            chip.pack(side="left", padx=2, pady=2)
+            ctk.CTkLabel(chip, text=f"📝 {title[:28]}", text_color=_UI["label"]).pack(side="left", padx=(8, 2), pady=2)
+            ctk.CTkButton(
+                chip,
+                text="×",
+                width=24,
+                height=22,
+                corner_radius=10,
+                command=lambda i=nid: self.detach_note_from_chat(i),
+                **style_chrome_button(),
+            ).pack(side="left", padx=(0, 4), pady=2)
 
     def _chat_attach_image(self) -> None:
         paths = filedialog.askopenfilenames(
@@ -9142,6 +9294,11 @@ class AppWindow(ctk.CTk):
 
     def _chat_clear_attachments(self) -> None:
         self._chat_attachments = []
+        self._chat_attached_notes = []
+        try:
+            self._refresh_note_attach_chips()
+        except Exception:  # noqa: BLE001
+            pass
         if hasattr(self, "chat_attach_label"):
             n_skills = len(discover_skills())
             self.chat_attach_label.configure(
@@ -14340,6 +14497,7 @@ class AppWindow(ctk.CTk):
         items = [
             ("📎 Attach file", self._chat_attach),
             ("🖼 Attach image", getattr(self, "_chat_attach_image", self._chat_attach)),
+            ("📝 Attach note", self._chat_attach_note_dialog),
             ("🎨 Generate image", self._chat_image_gen_dialog),
             ("🔍 Web search", self._chat_web_search_dialog),
             ("👁 OCR", getattr(self, "_chat_ocr_dialog", lambda: None)),
@@ -14938,7 +15096,8 @@ class AppWindow(ctk.CTk):
             text = self.chat_input.get("1.0", "end").strip()
         self._sanitize_chat_attachments()
         attachments = list(self._chat_attachments)
-        if not text and not attachments:
+        attached_notes = list(getattr(self, "_chat_attached_notes", None) or [])
+        if not text and not attachments and not attached_notes:
             self.chat_status.configure(text="Empty message")
             return
 
@@ -14997,9 +15156,19 @@ class AppWindow(ctk.CTk):
             pass
 
         # Optimistic display (full content built after send on success path)
-        display = text or "(attachments only)"
+        display = text or ("(notes)" if attached_notes else "(attachments only)")
         if attachments:
             display += "\n[attachments: " + ", ".join(Path(p).name for p in attachments) + "]"
+        if attached_notes:
+            try:
+                from app.core.services.chat import notes_store as _ns
+                _ntitles = []
+                for _nid in attached_notes:
+                    _n = _ns.get_note(_nid)
+                    _ntitles.append((_n or {}).get("title") or _nid[:8])
+                display += "\n[notes: " + ", ".join(_ntitles) + "]"
+            except Exception:  # noqa: BLE001
+                display += "\n[notes: " + ", ".join(attached_notes) + "]"
         images = list(getattr(self, "_pending_images", []) or [])
         videos = list(getattr(self, "_pending_videos", []) or [])
         # Stage into chat_media for stable in-chat display
@@ -15380,6 +15549,7 @@ class AppWindow(ctk.CTk):
                         history=prior,
                         system_prompt=user_sys,
                         attachment_paths=attachments,
+                        attached_note_ids=note_ids_for_send,
                         mode=mode,
                         terminal_enabled=terminal_on,
                         skills_enabled=skills_on,

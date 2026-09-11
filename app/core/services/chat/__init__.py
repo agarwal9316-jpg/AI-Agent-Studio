@@ -9,6 +9,7 @@ from app.core.services.chat import memory_store
 from app.core.services.chat import orchestrator
 from app.core.services.chat import multimodel
 from app.core.services.chat import hash_inject
+from app.core.services.chat import notes_store
 
 # Expose commonly used functions from chat module
 from app.core.services.chat.chat import (
@@ -28,6 +29,7 @@ __all__ = [
     "orchestrator",
     "multimodel",
     "hash_inject",
+    "notes_store",
     "load_chat",
     "save_chat",
     "clear_chat",

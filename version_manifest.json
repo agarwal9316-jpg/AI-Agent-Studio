@@ -1,7 +1,7 @@
 {
   "name": "AI Agent Studio",
-  "version": "1.27.89",
-  "notes": "P0.4 Hybrid RAG lift \u2014 BM25 + embeddings + RRF/cross-score, Settings toggle, soft-degrade",
+  "version": "1.27.90",
+  "notes": "P1.1 Notes workspace \u2014 persist markdown notes, attach to chat full-context inject, AI rewrite soft-degrade",
   "download_url": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/latest",
   "source": "github"
 }
