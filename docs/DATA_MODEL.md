@@ -32,6 +32,9 @@ data/
     approvals/
     workflow_graphs.json   # multi org charts (see § Org graphs)
   team_channels/           # Team workspace feeds
+  channels/                # P1.2 Workspace Channels (user+model timeline)
+    index.json             # active_id + channel summaries
+    <channel_id>.json      # name, description, messages (pins/threads)
   projects/*.json
   project_outputs/<project_id>/
   memory/memory.json

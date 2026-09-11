@@ -17,7 +17,7 @@
 
 ### Sidebar pages (typical order)
 
-Chat · Home · Agents · Tasks · Runs · Chats · Memory · Projects · Company · CEO · Workflow · Knowledge · Notes · Approvals · Patches · Schedule · Usage · Settings · About  
+Chat · Home · Agents · Tasks · Runs · Chats · Memory · Projects · Company · CEO · Workflow · Knowledge · Notes · Channels · Approvals · Patches · Schedule · Usage · Settings · About  
 
 *(Exact labels come from `app_window` nav construction.)*
 
@@ -167,3 +167,17 @@ Chat chrome always uses explicit `UI` colors so text stays readable.
 | Attach to chat | Chip on Chat composer → full-context inject next send |
 | AI rewrite | Optional LLM rewrite of selection (soft-degrade if no key) |
 
+
+
+## Channels page (1.27.91)
+
+| Control | Role |
+|---------|------|
+| Channel list | Search / New / Rename / Delete |
+| Timeline | User + model + system messages |
+| Post | User message (works without API key) |
+| Ask model | Picker or `@model` mention → model reply into channel |
+| Soft pin | Pin/unpin messages shown above timeline |
+| Reply | Soft thread (`parent_id` / `reply_to`) |
+
+Separate from **Team** goal channels (`data/team_channels/`).

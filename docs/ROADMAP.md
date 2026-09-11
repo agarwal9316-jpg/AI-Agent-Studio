@@ -33,7 +33,7 @@
 - [x] `#` doc + URL inject into chat context (1.27.88)  
 - [x] Hybrid RAG lift — BM25 + embeddings + RRF (1.27.89)  
 - [x] Notes workspace + attach-to-chat full-context inject (1.27.90)  
-- [ ] Channels (OWUI-inspired) — not started  
+- [x] Channels (OWUI-inspired) — shared timeline + @model ask (1.27.91)  
 - [ ] Filesystem sandbox profiles  
 - [ ] Virtualized long chat history  
 - [ ] Keep docs/ in sync on every release (process)  

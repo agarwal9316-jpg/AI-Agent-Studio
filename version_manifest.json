@@ -1,7 +1,7 @@
 {
   "name": "AI Agent Studio",
-  "version": "1.27.90",
-  "notes": "P1.1 Notes workspace \u2014 persist markdown notes, attach to chat full-context inject, AI rewrite soft-degrade",
+  "version": "1.27.91",
+  "notes": "P1.2 Channels workspace \u2014 shared user+model timeline, @mention/picker ask, soft pins/threads, soft-degrade without API key",
   "download_url": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/latest",
   "source": "github"
 }

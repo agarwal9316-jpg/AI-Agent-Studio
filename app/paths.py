@@ -69,6 +69,13 @@ def notes_dir() -> Path:
     return d
 
 
+def channels_dir() -> Path:
+    """Workspace channels timeline (OWUI-inspired P1.2). Separate from team_channels."""
+    d = data_dir() / "channels"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
 def projects_dir() -> Path:
     d = data_dir() / "projects"
     d.mkdir(parents=True, exist_ok=True)

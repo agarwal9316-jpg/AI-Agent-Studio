@@ -89,6 +89,7 @@ from app.core.services.misc.runner import run_pipeline
 from app.core.services.tools.skills_registry import discover_skills
 from app.ui import mgmt_pages
 from app.ui.pages import notes_page
+from app.ui.pages import channels_page
 from app.version import APP_NAME, __version__
 
 NAV_ITEMS = (
@@ -105,6 +106,7 @@ NAV_ITEMS = (
     "Patches",
     "Knowledge",
     "Notes",
+    "Channels",
     "Schedule",
     "Org chart",
     "Memory",
@@ -1104,7 +1106,7 @@ class AppWindow(ctk.CTk):
             ]
         return [
             ("PRIMARY", ("Home", "Chat", "Team", "Models", "Monitor", "Help")),
-            ("WORKSPACE", ("Work", "Approvals", "Knowledge", "Notes", "Org chart")),
+            ("WORKSPACE", ("Work", "Approvals", "Knowledge", "Notes", "Channels", "Org chart")),
             (
                 "MORE",
                 (
@@ -2943,6 +2945,7 @@ class AppWindow(ctk.CTk):
             "Patches": self._page_patches,
             "Knowledge": self._page_knowledge,
             "Notes": lambda: notes_page.page_notes(self),
+            "Channels": lambda: channels_page.page_channels(self),
             "Schedule": self._page_schedule,
             "Memory": lambda: mgmt_pages.page_memory(self),
             "Projects": lambda: mgmt_pages.page_projects(self),
