@@ -11,6 +11,7 @@
 ```
 data/
   config.json              # global settings
+  #   agent_sandbox_profile / agent_sandbox_custom_roots / agent_sandbox_enabled
   providers.json           # multi-provider LLM configs
   mcp.json                 # MCP server definitions
   usage.json               # usage meter

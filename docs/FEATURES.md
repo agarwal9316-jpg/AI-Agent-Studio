@@ -1,6 +1,6 @@
 # Feature inventory
 
-**Version:** 1.27.95  
+**Version:** 1.27.96  
 **Maintained here** (root `FEATURES.md` is a pointer).  
 **History:** [CHANGELOG.md](CHANGELOG.md) · resume [CONTINUITY.md](CONTINUITY.md)
 
@@ -21,6 +21,7 @@
 | Voice in/out first-class | Yes | Settings → Voice · 🎤/🔊 · `voice_settings` · soft-degrade · 1.27.84 |
 | Better voice (Whisper STT + OpenAI/ElevenLabs TTS) | Yes | Engine pickers · Test STT/TTS · Studio API key · local soft-degrade · 1.27.94 |
 | Artifacts persistent store (Saved library) | Yes | Live → Artifacts This turn/Saved · `artifacts_store` · `data/artifacts/` · save/open/reveal/export/delete/search · soft-degrade · 1.27.95 |
+| Filesystem sandbox profiles | Yes | Settings → Agent harness · Read-only workspace / Project-only / Full disk with ask · custom roots · file+shell enforce · `agent_harness.sandbox` · 1.27.96 |
 | Native OpenAI tool_calls + role:tool | Yes | Settings toggle · `native_tool_calls` · dual-path · 1.27.86 |
 | Multi-model compare / arena | Yes | Chat **Compare** chip · `multimodel` · 2–3 parallel text replies · 1.27.87 |
 | `#` doc + URL inject | Yes | Composer `#token` · `hash_inject` · knowledge/file/URL · soft-degrade · 1.27.88 |
@@ -41,7 +42,7 @@
 | LIST_DIR / GREP | Yes | Chat tool blocks |
 | Subagents (explore/plan/general) | Yes | SPAWN_SUBAGENT · data/subagents/ |
 | Permission allow/ask/deny | Yes | config agent_*_rules · Settings Agent harness |
-| Workspace sandbox | Yes | agent_sandbox_enabled · profiles |
+| Workspace sandbox | Yes | Named profiles + custom roots · agent_sandbox_* · 1.27.96 |
 | Plan.md mode | Yes | ENTER_PLAN / PLAN_WRITE · data/plans/ |
 | AGENTS.md project rules | Yes | Auto inject from cwd walk |
 | Lifecycle hooks | Yes | data/hooks/*.json |

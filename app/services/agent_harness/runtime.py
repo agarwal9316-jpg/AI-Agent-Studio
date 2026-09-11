@@ -494,8 +494,10 @@ def inject_project_context(cwd: str | None = None, chat_id: str | None = None) -
             pm = permissions.status()
             parts.append(
                 f"## Agent harness status\n"
-                f"- sandbox: enabled={sb.get('enabled')} profile={sb.get('profile')}\n"
-                f"- permissions: mode={pm.get('mode')}\n"
+                f"- sandbox: enabled={sb.get('enabled')} "
+                f"profile={sb.get('profile')} ({sb.get('profile_label') or ''}) "
+                f"deny_writes={sb.get('deny_writes')} allow_shell={sb.get('allow_shell')}\n"
+                f"- permissions: mode={pm.get('mode')} risk={pm.get('risk_tier')}\n"
                 f"- plan_mode: {plan_mode.is_plan_mode()}\n"
             )
         except Exception:  # noqa: BLE001

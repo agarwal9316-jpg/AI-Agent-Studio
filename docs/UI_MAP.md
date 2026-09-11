@@ -225,3 +225,8 @@ Live side panel → **Artifacts** segmented **This turn | Saved**.
 | Saved | Search · Open · Reveal · Export · Delete |
 | Soft-degrade | Disk errors show muted note; chat never crashes |
 
+### Settings — Agent harness (1.27.96)
+- **Sandbox profile** picker: Read-only workspace · Project-only · Workspace · Strict · Full disk with ask · Off
+- **Custom roots** comma-separated extra allow paths
+- Chat **risk tier** chip maps onto profile (read_only → Read-only workspace, ask → Project-only, full → Full disk with ask)
+

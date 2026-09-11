@@ -1,7 +1,7 @@
 {
   "name": "AI Agent Studio",
-  "version": "1.27.95",
-  "notes": "P2.2 Artifacts persistent store \u2014 Saved library under data/artifacts/; save-from-turn; open/reveal/export/delete/search; soft-degrade",
+  "version": "1.27.96",
+  "notes": "Filesystem sandbox profiles \u2014 Read-only workspace / Project-only / Full disk with ask; custom roots; Settings + Chat risk UI; file/shell enforcement",
   "download_url": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/latest",
   "source": "github"
 }

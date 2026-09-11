@@ -19047,10 +19047,45 @@ class AppWindow(ctk.CTk):
         if perm_mode not in ("auto", "ask", "always_approve", "plan"):
             perm_mode = "auto"
         perm_var = ctk.StringVar(master=ah_box, value=perm_mode)
-        sand_prof = str(cfg.get("agent_sandbox_profile") or "workspace")
-        if sand_prof not in ("workspace", "strict", "read_only", "off"):
-            sand_prof = "workspace"
+        try:
+            from app.services.agent_harness.sandbox import (
+                list_profiles as _sbx_list_profiles,
+                normalize_profile_id as _sbx_norm,
+                profile_labels as _sbx_labels,
+                custom_roots_from_config as _sbx_custom,
+            )
+
+            _sbx_profs = _sbx_list_profiles()
+            _sbx_ids = [p["id"] for p in _sbx_profs]
+            _sbx_lab = _sbx_labels()
+            sand_prof = _sbx_norm(cfg.get("agent_sandbox_profile") or "workspace")
+            _custom_roots0 = ", ".join(_sbx_custom(cfg))
+        except Exception:  # noqa: BLE001
+            _sbx_ids = [
+                "read_only_workspace",
+                "project_only",
+                "workspace",
+                "strict",
+                "full_ask",
+                "off",
+            ]
+            _sbx_lab = {
+                "read_only_workspace": "Read-only workspace",
+                "project_only": "Project-only",
+                "workspace": "Workspace",
+                "strict": "Strict (app + data)",
+                "full_ask": "Full disk with ask",
+                "off": "Off",
+            }
+            sand_prof = str(cfg.get("agent_sandbox_profile") or "workspace")
+            if sand_prof not in _sbx_ids:
+                sand_prof = "workspace"
+            _custom_roots0 = ", ".join(
+                str(x) for x in (cfg.get("agent_sandbox_custom_roots") or cfg.get("agent_sandbox_extra_write") or [])
+                if str(x).strip()
+            )
         sand_prof_var = ctk.StringVar(master=ah_box, value=sand_prof)
+        sand_custom_var = ctk.StringVar(master=ah_box, value=_custom_roots0)
         ctk.CTkLabel(
             ah_box,
             text=(
@@ -19076,12 +19111,37 @@ class AppWindow(ctk.CTk):
             width=140,
         ).pack(side="left", padx=4)
         ctk.CTkLabel(ah_row2, text="Sandbox profile", text_color=_HC_LABEL).pack(side="left", padx=(12, 4))
+        sand_hint_lbl = ctk.CTkLabel(
+            ah_row2,
+            text=_sbx_lab.get(sand_prof, sand_prof),
+            text_color=_HC_MUTED,
+            width=160,
+            anchor="w",
+        )
+
+        def _on_sand_prof_ui(v: str) -> None:
+            try:
+                sand_hint_lbl.configure(text=str(_sbx_lab.get(v, v)))
+            except Exception:  # noqa: BLE001
+                pass
+
         ctk.CTkOptionMenu(
             ah_row2,
             variable=sand_prof_var,
-            values=["workspace", "strict", "read_only", "off"],
-            width=120,
+            values=_sbx_ids,
+            width=170,
+            command=_on_sand_prof_ui,
         ).pack(side="left", padx=4)
+        sand_hint_lbl.pack(side="left", padx=6)
+        ah_row2b = ctk.CTkFrame(ah_box, fg_color="transparent")
+        ah_row2b.pack(fill="x", padx=8, pady=(0, 8))
+        ctk.CTkLabel(ah_row2b, text="Custom roots", text_color=_HC_LABEL).pack(side="left", padx=(6, 4))
+        ctk.CTkEntry(
+            ah_row2b,
+            textvariable=sand_custom_var,
+            width=480,
+            placeholder_text="Optional extra allow paths, comma-separated",
+        ).pack(side="left", padx=4, fill="x", expand=True)
         # Task #4: simple risk tiers (maps to permission + sandbox + tool approval)
         try:
             from app.services.agent_harness.permissions import get_risk_tier, set_risk_tier, risk_tier_hint
@@ -19119,8 +19179,18 @@ class AppWindow(ctk.CTk):
                 sand_on = bool(r.get("sandbox_enabled"))
                 sandbox_on_var.set(sand_on)
                 sp = str(r.get("sandbox_profile") or "")
-                if sp in ("workspace", "strict", "read_only", "off"):
+                try:
+                    from app.services.agent_harness.sandbox import normalize_profile_id as _npid
+
+                    sp = _npid(sp)
+                except Exception:  # noqa: BLE001
+                    pass
+                if sp in _sbx_ids:
                     sand_prof_var.set(sp)
+                    try:
+                        sand_hint_lbl.configure(text=str(_sbx_lab.get(sp, sp)))
+                    except Exception:  # noqa: BLE001
+                        pass
             except Exception:  # noqa: BLE001
                 pass
 
@@ -19188,19 +19258,42 @@ class AppWindow(ctk.CTk):
                 self.cfg["agent_hooks_enabled"] = bool(hooks_on_var.get())
                 self.cfg["agent_permission_mode"] = perm_var.get() or "auto"
                 self.cfg["agent_sandbox_profile"] = sand_prof_var.get() or "workspace"
+                _cr = [
+                    x.strip()
+                    for x in str(sand_custom_var.get() or "").replace(";", ",").split(",")
+                    if x.strip()
+                ]
+                self.cfg["agent_sandbox_custom_roots"] = _cr
+                self.cfg["agent_sandbox_extra_write"] = list(_cr)
                 # Prefer explicit risk tier (maps permissions); then re-sync expert fields
                 try:
                     from app.services.agent_harness.permissions import set_risk_tier
+                    from app.services.agent_harness.sandbox import set_active_profile
 
                     set_risk_tier(risk_tier_var.get() or "ask")
                     self.cfg = storage.load_config()
-                    # Re-apply expert toggles the user may have changed after tier
+                    # Re-apply expert toggles / profile the user may have changed after tier
                     self.cfg["agent_harness_enabled"] = bool(harness_on_var.get())
                     self.cfg["agent_sandbox_enabled"] = bool(sandbox_on_var.get())
                     self.cfg["agent_hooks_enabled"] = bool(hooks_on_var.get())
                     self.cfg["agent_permission_mode"] = perm_var.get() or "auto"
                     self.cfg["agent_sandbox_profile"] = sand_prof_var.get() or "workspace"
+                    self.cfg["agent_sandbox_custom_roots"] = _cr
+                    self.cfg["agent_sandbox_extra_write"] = list(_cr)
                     self.cfg["agent_risk_tier"] = risk_tier_var.get() or "ask"
+                    try:
+                        set_active_profile(
+                            sand_prof_var.get() or "workspace",
+                            custom_roots=_cr,
+                            enabled=bool(sandbox_on_var.get()),
+                        )
+                        self.cfg = storage.load_config()
+                        self.cfg["agent_harness_enabled"] = bool(harness_on_var.get())
+                        self.cfg["agent_hooks_enabled"] = bool(hooks_on_var.get())
+                        self.cfg["agent_permission_mode"] = perm_var.get() or "auto"
+                        self.cfg["agent_risk_tier"] = risk_tier_var.get() or "ask"
+                    except Exception:  # noqa: BLE001
+                        pass
                 except Exception:  # noqa: BLE001
                     self.cfg["agent_risk_tier"] = risk_tier_var.get() or "ask"
             except Exception:  # noqa: BLE001

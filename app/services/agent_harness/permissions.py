@@ -242,23 +242,23 @@ def set_risk_tier(tier: str) -> dict[str, Any]:
     if t == "read_only":
         cfg["agent_permission_mode"] = "plan"
         cfg["agent_sandbox_enabled"] = True
-        cfg["agent_sandbox_profile"] = "read_only"
+        cfg["agent_sandbox_profile"] = "read_only_workspace"
         cfg["tool_approval_required"] = True
     elif t == "ask":
         cfg["agent_permission_mode"] = "ask"
         cfg["agent_sandbox_enabled"] = True
-        if str(cfg.get("agent_sandbox_profile") or "") == "read_only":
-            cfg["agent_sandbox_profile"] = "workspace"
-        elif not cfg.get("agent_sandbox_profile"):
-            cfg["agent_sandbox_profile"] = "workspace"
+        cur_prof = str(cfg.get("agent_sandbox_profile") or "").lower()
+        if cur_prof in ("read_only", "read_only_workspace", "off", ""):
+            cfg["agent_sandbox_profile"] = "project_only"
         cfg["tool_approval_required"] = True
     else:  # full
         cfg["agent_permission_mode"] = "auto"
-        # Keep sandbox on by default for path safety; user can disable in Settings
+        # Map to Full disk with ask profile unless user already chose workspace/off
         if "agent_sandbox_enabled" not in cfg:
             cfg["agent_sandbox_enabled"] = True
-        if str(cfg.get("agent_sandbox_profile") or "") == "read_only":
-            cfg["agent_sandbox_profile"] = "workspace"
+        cur_prof = str(cfg.get("agent_sandbox_profile") or "").lower()
+        if cur_prof in ("read_only", "read_only_workspace", ""):
+            cfg["agent_sandbox_profile"] = "full_ask"
         cfg["tool_approval_required"] = False
 
     save_config(cfg)

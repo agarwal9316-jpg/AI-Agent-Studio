@@ -227,6 +227,27 @@ def run_command(
             "exit_code": None,
         }
 
+    # Filesystem sandbox profiles — deny shell when profile.allow_shell is False
+    # or cwd is outside allowed roots.
+    try:
+        from app.services.agent_harness.sandbox import check_shell_access
+
+        _shell = check_shell_access(cwd)
+        if not _shell.get("ok"):
+            err = str(_shell.get("error") or "Sandbox denied shell")
+            return {
+                "ok": False,
+                "command": cmd,
+                "error": err,
+                "stdout": "",
+                "stderr": err,
+                "exit_code": None,
+                "denied": True,
+                "sandbox_profile": _shell.get("profile"),
+            }
+    except Exception:  # noqa: BLE001
+        pass
+
     dump_path = looks_like_source_dump_cmd(cmd)
     if dump_path:
         return {

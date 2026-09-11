@@ -28,6 +28,19 @@ def start_bg_shell(
     timeout: float | None = None,
 ) -> dict[str, Any]:
     """Start command in background; returns task_id immediately."""
+    try:
+        from app.services.agent_harness.sandbox import check_shell_access
+
+        _shell = check_shell_access(cwd)
+        if not _shell.get("ok"):
+            return {
+                "ok": False,
+                "error": str(_shell.get("error") or "Sandbox denied shell"),
+                "denied": True,
+                "sandbox_profile": _shell.get("profile"),
+            }
+    except Exception:  # noqa: BLE001
+        pass
     tid = uuid.uuid4().hex[:12]
     log_path = _task_log_dir() / f"{tid}.log"
     meta: dict[str, Any] = {

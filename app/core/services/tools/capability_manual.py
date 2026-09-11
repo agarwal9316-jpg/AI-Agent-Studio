@@ -31,7 +31,7 @@ It is **not** the Grok Build TUI process. Some Grok *host* tools cannot run here
 | Workflows (.rhai) | Partial | Company workflow tree + scheduler; not Grok .rhai (run via terminal if needed) |
 | File tools (read/write/patch/grep) | YES | `<<<READ_FILE>>>` `<<<WRITE_FILE>>>` `<<<SEARCH_REPLACE>>>` `<<<GREP>>>` `<<<LIST_DIR>>>` |
 | Permissions allow/ask/deny | YES | Settings → Agent harness · `agent_permission_mode` + rules |
-| Workspace sandbox | YES | `agent_sandbox_enabled` + profiles workspace/strict/read_only |
+| Workspace sandbox | YES | Named profiles: Read-only workspace · Project-only · Full disk with ask (+ custom roots) |
 | Plan file mode | YES | `<<<ENTER_PLAN>>>` / `<<<PLAN_WRITE>>>` · data/plans/ |
 | Background shell tasks | YES | `<<<BG_SHELL>>>` / `<<<BG_STATUS>>>` |
 | Git helpers | YES | `<<<GIT_STATUS>>>` `<<<GIT_DIFF>>>` `<<<GIT_COMMIT>>>` … |
