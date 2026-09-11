@@ -19,6 +19,7 @@ from app.core.services.company import company_store
 from app.core.services.company import org_comms
 from app.core.services.company import org_tools
 from app.core.services.data import agent_tracker
+from app.core.services.data import audit_log
 from app.core.services.data import project_outputs
 from app.core.services.data import project_store
 from app.core.services.data import rag_knowledge
@@ -68,6 +69,7 @@ __all__ = [
     "org_comms",
     "org_tools",
     "agent_tracker",
+    "audit_log",
     "project_outputs",
     "project_store",
     "rag_knowledge",

@@ -7774,6 +7774,34 @@ class AppWindow(ctk.CTk):
         except Exception as e:  # noqa: BLE001
             messagebox.showerror("Export log", str(e), parent=self)
 
+    def _export_tool_audit(self, fmt: str = "json"):
+        """PENDING #16: export tool-call audit log as JSON or CSV."""
+        from tkinter import filedialog
+        from pathlib import Path as _P
+
+        from app.core.services.data import audit_log as _audit
+
+        fmt = (fmt or "json").lower().strip()
+        if fmt not in ("json", "csv"):
+            fmt = "json"
+        path = filedialog.asksaveasfilename(
+            parent=self,
+            title=f"Export tool audit ({fmt.upper()})",
+            defaultextension=f".{fmt}",
+            initialfile=f"tool_audit.{fmt}",
+            filetypes=[(fmt.upper(), f"*.{fmt}"), ("All", "*.*")],
+        )
+        if not path:
+            return None
+        try:
+            out = _audit.export_json(_P(path)) if fmt == "json" else _audit.export_csv(_P(path))
+            messagebox.showinfo("Audit export", f"Saved:\n{out}", parent=self)
+            self.set_status(f"Exported audit log → {out.name}", toast=True)
+            return out
+        except Exception as e:  # noqa: BLE001
+            messagebox.showerror("Audit export", str(e), parent=self)
+            return None
+            messagebox.showinfo("Audit export", "Saved:\n" + str(out), parent=self)
     def _thinking_export_text(self) -> str:
         """Plain text of every step: title, current, raw."""
         lines: list[str] = []
@@ -16983,6 +17011,96 @@ class AppWindow(ctk.CTk):
             text="Self-improve → Patches review",
             variable=si_review_var,
         ).pack(side="left", padx=8, pady=6)
+
+
+        # PENDING #16: Tool call audit log (Settings)
+        try:
+            from app.core.services.data import audit_log as _audit_ui
+
+            audit_strip = ctk.CTkFrame(opts, fg_color="transparent")
+            audit_strip.pack(fill="x", padx=8, pady=(8, 6))
+            ctk.CTkLabel(
+                audit_strip,
+                text="Tool call audit log",
+                font=ctk.CTkFont(size=12, weight="bold"),
+                text_color=_HC_LABEL,
+            ).pack(anchor="w")
+            _asum = _audit_ui.status_summary()
+            audit_count_lbl = ctk.CTkLabel(
+                audit_strip,
+                text=(
+                    f"Persisted tool calls: {_asum.get('count', 0)} · "
+                    f"data/tool_audit.json (secrets redacted)"
+                ),
+                text_color=_HC_MUTED,
+                font=ctk.CTkFont(size=11),
+            )
+            audit_count_lbl.pack(anchor="w", pady=(0, 4))
+
+            def _refresh_audit_count() -> None:
+                try:
+                    s = _audit_ui.status_summary()
+                    audit_count_lbl.configure(
+                        text=(
+                            f"Persisted tool calls: {s.get('count', 0)} · "
+                            f"data/tool_audit.json (secrets redacted)"
+                        )
+                    )
+                except Exception:  # noqa: BLE001
+                    pass
+
+            def _export_audit_json() -> None:
+                try:
+                    out = self._export_tool_audit(fmt="json")
+                    if out:
+                        _refresh_audit_count()
+                except Exception as e:  # noqa: BLE001
+                    messagebox.showerror("Audit export", str(e), parent=self)
+
+            def _export_audit_csv() -> None:
+                try:
+                    out = self._export_tool_audit(fmt="csv")
+                    if out:
+                        _refresh_audit_count()
+                except Exception as e:  # noqa: BLE001
+                    messagebox.showerror("Audit export", str(e), parent=self)
+
+            def _clear_audit() -> None:
+                if not messagebox.askyesno(
+                    "Clear audit log",
+                    "Delete all persisted tool-call audit entries?",
+                    parent=self,
+                ):
+                    return
+                try:
+                    n = _audit_ui.clear()
+                    _refresh_audit_count()
+                    self.set_status(f"Cleared {n} audit entries", toast=True)
+                except Exception as e:  # noqa: BLE001
+                    messagebox.showerror("Clear audit", str(e), parent=self)
+
+            def _rotate_audit() -> None:
+                try:
+                    removed = _audit_ui.rotate(keep=1000)
+                    _refresh_audit_count()
+                    self.set_status(f"Rotated audit log (removed {removed})", toast=True)
+                except Exception as e:  # noqa: BLE001
+                    messagebox.showerror("Rotate audit", str(e), parent=self)
+
+            brow = ctk.CTkFrame(audit_strip, fg_color="transparent")
+            brow.pack(fill="x", pady=2)
+            ctk.CTkButton(
+                brow, text="Export JSON", width=110, command=_export_audit_json, **style_chrome_button()
+            ).pack(side="left", padx=4)
+            ctk.CTkButton(
+                brow, text="Export CSV", width=110, command=_export_audit_csv, **style_chrome_button()
+            ).pack(side="left", padx=4)
+            ctk.CTkButton(brow, text="Clear", width=80, command=_clear_audit).pack(side="left", padx=4)
+            ctk.CTkButton(
+                brow, text="Rotate (keep 1000)", width=140, command=_rotate_audit
+            ).pack(side="left", padx=4)
+        except Exception:  # noqa: BLE001
+            pass
 
         # PENDING #18: Voice in/out
         from app.core.services.ai import voice_settings as _vs

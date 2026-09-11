@@ -1,6 +1,6 @@
 # Feature inventory
 
-**Version:** 1.27.81  
+**Version:** 1.27.82  
 **Maintained here** (root `FEATURES.md` is a pointer).  
 **History:** [CHANGELOG.md](CHANGELOG.md) · resume [CONTINUITY.md](CONTINUITY.md)
 
@@ -16,6 +16,7 @@
 | Chat delete + rail pin/rename/drag | Yes | `chat_store` · history rail ⋯ / right-click |
 | Single OS window chrome (no duplicate min/max/✕) | Yes | `app_window` · OS title bar only |
 | System tray + run in background | Yes | `system_tray` · Show/Hide/Quit · Settings · 1.27.81 |
+| Tool call audit log (export JSON/CSV) | Yes | `audit_log` · Settings · 1.27.82 |
 | Launch always-visible (no stuck hide) | Yes | theme pre-apply · force deiconify · no alpha-0 |
 | Browser headless→headed anti-bot fallback | Yes | `browser_tool` · captcha wait |
 | Perchance image path (portable Chromium) | Yes | `perchance_image` · may still hit site anti-bot |

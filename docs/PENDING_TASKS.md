@@ -4,8 +4,8 @@
 **Rule:** Execute **one task at a time** → test/debug → mark done → next.  
 **Status:** `pending` | `in_progress` | `done` | `blocked` | `skipped`
 
-Last updated: 2026-09-11 · App version: **1.27.81**  
-*(Tasks #1–15 done at 1.26.x; #19 tray done at 1.27.81. Next sequential task remains #16.)*
+Last updated: 2026-09-11 · App version: **1.27.82**  
+*(Tasks #1–15 done at 1.26.x; #16 audit log done at 1.27.82; #19 tray done at 1.27.81. Next sequential task remains #17.)*
 
 ---
 
@@ -28,7 +28,7 @@ Last updated: 2026-09-11 · App version: **1.27.81**
 | 13 | Global hotkey: ask about clipboard/selection | P1 | **done** | Ctrl+Shift+G · 1.26.1 |
 | 14 | Parallel agents with budget/time caps | P1 | **done** | PARALLEL_AGENTS + caps · 1.26.2 |
 | 15 | Sandbox / cwd lock per chat | P1 | **done** | cwd lock 🔒 · 1.26.2 |
-| 16 | Export audit log of all tool calls | P1 | pending | next |
+| 16 | Export audit log of all tool calls | P1 | **done** | 1.27.82 · `audit_log` · Settings export JSON/CSV |
 | 17 | Offline Ollama path clearly labeled | P1 | pending | |
 | 18 | Voice in/out first-class | P2 | pending | Partial STT exists |
 | 19 | System tray + run in background | P2 | **done** | 1.27.81 · pystray Show/Hide/Quit · start minimized |
@@ -41,6 +41,7 @@ Last updated: 2026-09-11 · App version: **1.27.81**
 | # | Task | Version | Date |
 |---|------|---------|------|
 | 19 | System tray + run in background | 1.27.81 | 2026-09-11 |
+| 16 | Export audit log of all tool calls | 1.27.82 | 2026-09-11 |
 | 14–15 | Parallel agents + cwd lock sandbox | 1.26.2 | 2026-08-05 |
 | 12–13 | Artifacts panel · global clipboard hotkey | 1.26.1 | 2026-08-05 |
 | 10–11 | Version check UX · prompt library | 1.26.0 | 2026-08-05 |
@@ -57,9 +58,9 @@ Last updated: 2026-09-11 · App version: **1.27.81**
 
 ## Current focus
 
-**Next sequential task:** **#16** — Export audit log of all tool calls.
+**Next sequential task:** **#17** — Offline Ollama path clearly labeled.
 
-**App head:** **1.27.81** (system tray #19 · see CHANGELOG).
+**App head:** **1.27.82** (tool audit #16 · see CHANGELOG).
 
 ---
 

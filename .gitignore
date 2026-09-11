@@ -15,6 +15,8 @@ data/*.png
 data/*.html
 data/usage.json
 data/agent_runs.json
+data/tool_audit.json
+data/exports/
 data/file_edit_log.json
 data/watch_folders.json
 data/providers.json

@@ -528,19 +528,42 @@ def run_harness_from_reply(
             payload={"tool": tool, "args": args, "chat_id": chat_id},
         )
         if hr.get("blocked"):
-            results.append(
-                {
-                    "tool": tool,
-                    "result": {"ok": False, "error": f"hook blocked: {hr.get('reason')}"},
-                }
-            )
+            _bres = {"ok": False, "error": f"hook blocked: {hr.get('reason')}"}
+            results.append({"tool": tool, "result": _bres})
+            try:
+                from app.core.services.data import audit_log as _audit
+
+                _audit.record(
+                    tool,
+                    args=args,
+                    result=_bres,
+                    status="blocked",
+                    chat_id=chat_id,
+                    source="harness",
+                )
+            except Exception:  # noqa: BLE001
+                pass
             if emit:
                 emit(f"hook blocked {tool}")
             continue
         # permissions
         dec = permissions.evaluate(tool, summary, json.dumps(args)[:500])
         if dec.get("decision") == "deny":
-            results.append({"tool": tool, "result": {"ok": False, "error": dec.get("reason"), "denied": True}})
+            _dres = {"ok": False, "error": dec.get("reason"), "denied": True}
+            results.append({"tool": tool, "result": _dres})
+            try:
+                from app.core.services.data import audit_log as _audit
+
+                _audit.record(
+                    tool,
+                    args=args,
+                    result=_dres,
+                    status="denied",
+                    chat_id=chat_id,
+                    source="harness",
+                )
+            except Exception:  # noqa: BLE001
+                pass
             if emit:
                 emit(f"denied {tool}: {dec.get('reason')}")
             continue
@@ -572,10 +595,27 @@ def run_harness_from_reply(
             continue
         if emit:
             emit(f"harness {tool}")
+        import time as _time
+
+        _t0 = _time.monotonic()
         res = dispatch_named_tool(tool, args, cwd=cwd, chat_id=chat_id)
+        _dur = int((_time.monotonic() - _t0) * 1000)
         hooks.run_hooks(
             "PostToolUse",
             payload={"tool": tool, "args": args, "result_ok": bool(res.get("ok")), "chat_id": chat_id},
         )
+        try:
+            from app.core.services.data import audit_log as _audit
+
+            _audit.record(
+                tool,
+                args=args,
+                result=res,
+                chat_id=chat_id,
+                source="harness",
+                duration_ms=_dur,
+            )
+        except Exception:  # noqa: BLE001
+            pass
         results.append({"tool": tool, "result": res})
     return results

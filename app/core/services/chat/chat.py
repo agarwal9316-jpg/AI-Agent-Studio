@@ -1039,6 +1039,27 @@ def send_user_message(
             agent_tracker.log_step(who, pretty)
         except Exception:  # noqa: BLE001
             pass
+        # PENDING #16: structured tool audit (soft-degrade)
+        if tool:
+            try:
+                from app.core.services.data import audit_log as _audit
+
+                _cid = ""
+                try:
+                    _cid = str(chat_id or chat_id_hint or "")
+                except Exception:  # noqa: BLE001
+                    _cid = str(chat_id_hint or "")
+                _audit.record(
+                    str(tool),
+                    args_summary=(detail or pretty or "")[:800],
+                    result_summary=(pretty or "")[:800],
+                    status=status or "info",
+                    chat_id=_cid,
+                    source=source or "chat",
+                    duration_ms=duration_ms,
+                )
+            except Exception:  # noqa: BLE001
+                pass
         if on_progress:
             # Always send structured data so Thinking can tell LLM thoughts from phase labels
             step_data = {
@@ -1106,6 +1127,19 @@ def send_user_message(
                 }
             )
             emit(msg)
+            try:
+                from app.core.services.data import audit_log as _audit
+
+                _audit.record(
+                    tool,
+                    args_summary=(summary or "")[:800],
+                    status="denied",
+                    error=msg,
+                    chat_id=str(chat_id or ""),
+                    source="budget",
+                )
+            except Exception:  # noqa: BLE001
+                pass
             return False
         # Safety / tool approval gate for risky tools
         risky = tool in (
@@ -1146,8 +1180,38 @@ def send_user_message(
                         "at": _now(),
                     }
                 )
+                try:
+                    from app.core.services.data import audit_log as _audit
+
+                    _audit.record(
+                        tool,
+                        args_summary=(summary or "")[:800],
+                        status="denied",
+                        error=f"approval {st or 'rejected'}",
+                        chat_id=str(chat_id or ""),
+                        source="approval",
+                    )
+                except Exception:  # noqa: BLE001
+                    pass
                 return False
         return True
+
+    def _audit_tool(tool: str, *, args_summary: str = "", result: object = None, status: str | None = None, error: str = "", source: str = "chat") -> None:
+        """PENDING #16 soft-degrade audit write."""
+        try:
+            from app.core.services.data import audit_log as _audit
+
+            _audit.record(
+                tool,
+                args_summary=(args_summary or "")[:800],
+                result=result,
+                status=status,
+                error=error,
+                chat_id=str(chat_id or ""),
+                source=source,
+            )
+        except Exception:  # noqa: BLE001
+            pass
 
     pending_show_images: list[str] = []
     pending_show_videos: list[str] = []
@@ -1412,6 +1476,27 @@ def send_user_message(
                     "agent_name": who,
                 }
                 m.update(extra)
+                # PENDING #16: persist tool-role messages into audit log
+                try:
+                    from app.core.services.data import audit_log as _audit
+
+                    st = "ok"
+                    if extra.get("ok") is False:
+                        st = "error"
+                    elif extra.get("denied"):
+                        st = "denied"
+                    _audit.record(
+                        str(role),
+                        args_summary=str(extra.get("command") or extra.get("query") or "")[:800],
+                        result_summary=str(content or "")[:800],
+                        status=st,
+                        error=str(extra.get("error") or "")[:500],
+                        chat_id=str(chat_id or ""),
+                        source="chat",
+                        meta={"exit_code": extra.get("exit_code")} if "exit_code" in extra else None,
+                    )
+                except Exception:  # noqa: BLE001
+                    pass
                 return m
 
             # Plan mode: harness plan/read tools only (no writes/exec)
@@ -2120,6 +2205,7 @@ def send_user_message(
                     else:
                         body = f"### Skill load failed: {sk}\n{loaded.get('error')}"
                     hist.append({"role": "skill", "content": body, "at": _now()})
+                    _audit_tool("skill", args_summary=str(sk)[:200], result={"ok": True, "preview": str(body)[:200]}, status="ok")
 
             if exec_mcp:
                 for qual, args in extract_mcp_requests(reply):
@@ -2134,6 +2220,12 @@ def send_user_message(
                             "content": f"### MCP result `{qual}`\n```json\n{result}\n```",
                             "at": _now(),
                         }
+                    )
+                    _audit_tool(
+                        "mcp",
+                        args_summary=f"{qual} {args}"[:800],
+                        result=result if isinstance(result, dict) else {"preview": str(result)[:400]},
+                        status="ok",
                     )
 
             # In plan mode, log terminal commands for visibility but don't execute them
@@ -2200,6 +2292,19 @@ def send_user_message(
                                 "ok": bool(result.get("ok")),
                             }
                         )
+                        try:
+                            from app.core.services.data import audit_log as _audit
+
+                            _audit.record(
+                                "terminal",
+                                args_summary=(cmd or "")[:800],
+                                result=result,
+                                status="ok" if result.get("ok") else "error",
+                                chat_id=str(chat_id or ""),
+                                source="chat",
+                            )
+                        except Exception:  # noqa: BLE001
+                            pass
                     else:
                         # Plan mode: log for visibility only (not executed)
                         emit(f"⌨ Terminal (plan)", detail=cmd[:120])
@@ -2217,6 +2322,7 @@ def send_user_message(
                         "at": _now(),
                     }
                 )
+                _audit_tool("org", args_summary=(body or "")[:800], result=result if isinstance(result, dict) else {"preview": str(result)[:400]}, status="ok")
 
             for body in extract_pip_commands(reply):
                 used_tool = True
@@ -2231,6 +2337,7 @@ def send_user_message(
                         "at": _now(),
                     }
                 )
+                _audit_tool("pip", args_summary=(body or "")[:800], result=result if isinstance(result, dict) else {"preview": str(result)[:400]}, status="ok")
 
             if exec_laptop:
                 for name in extract_screenshot_blocks(reply):

@@ -1,7 +1,7 @@
 {
   "name": "AI Agent Studio",
-  "version": "1.27.81",
-  "notes": "PENDING #19 system tray + run in background",
+  "version": "1.27.82",
+  "notes": "PENDING #16 export audit log of tool calls",
   "download_url": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/latest",
   "source": "github"
 }
