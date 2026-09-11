@@ -525,7 +525,7 @@ def build_api_messages(
     system_prompt: str,
     chat_id: str = "",
     override_messages: list[dict[str, Any]] | None = None,
-) -> list[dict[str, str]]:
+) -> list[dict[str, Any]]:
     """
     Build OpenAI-compatible messages.
 
@@ -551,10 +551,33 @@ def build_api_messages(
         return out
     # Single system message only (merge any extras into this string)
     sys_parts = [(system_prompt or "").strip()]
-    msgs: list[dict[str, str]] = []
+    msgs: list[dict[str, Any]] = []
     for m in history:
         role = m.get("role") or "user"
         raw = (m.get("content") or "").strip()
+
+        # P0.1 native OpenAI path: keep assistant.tool_calls + role:tool pairs
+        try:
+            from app.core.services.tools.native_tool_calls import api_message_from_history_item
+
+            native_api = api_message_from_history_item(m)
+        except Exception:  # noqa: BLE001
+            native_api = None
+        if native_api is not None:
+            # Still shrink huge tool result content
+            if native_api.get("role") == "tool":
+                native_api["content"] = _shrink_history_for_api(
+                    "tool", str(native_api.get("content") or "")
+                )
+            elif native_api.get("role") == "assistant":
+                c = native_api.get("content")
+                if isinstance(c, str) and c.strip():
+                    native_api["content"] = _shrink_history_for_api("assistant", c)
+                elif not c:
+                    native_api["content"] = None
+            msgs.append(native_api)
+            continue
+
         if not raw:
             continue
         if role == "system":
@@ -563,6 +586,9 @@ def build_api_messages(
             continue
         if role == "thinking":
             # UI-only trace — do not re-send full thinking dump to the model every turn
+            continue
+        # Skip UI tool messages already paired into role:tool
+        if m.get("_native_paired"):
             continue
         if m.get("_hide_ui") or m.get("_tool_round") or m.get("_tool_intent_only"):
             continue
@@ -640,11 +666,17 @@ def build_api_messages(
         pass
 
     system_text = "\n\n".join(p for p in sys_parts if p)
-    out: list[dict[str, str]] = []
+    out: list[dict[str, Any]] = []
     if system_text:
         out.append({"role": "system", "content": system_text})
 
     out.extend(msgs)
+    try:
+        from app.core.services.tools.native_tool_calls import sanitize_native_tool_pairs
+
+        out = sanitize_native_tool_pairs(out)
+    except Exception:  # noqa: BLE001
+        pass
     return out
 
 
@@ -834,13 +866,37 @@ def send_user_message(
         + harness_tool_instructions()
     )
 
-    # Dual-path tools: native OpenAI schemas (when provider supports them) + text-block normalizer
+    # Dual-path tools: native OpenAI schemas (when preferred + provider supports) + text blocks
     openai_tools: list[dict[str, Any]] | None = None
+    prefer_native = True
     if mode == "action":
         try:
             from app.core.services.tools.tool_schemas import dual_path_tool_hint, studio_openai_tools
+            from app.core.services.tools.native_tool_calls import (
+                dual_path_native_hint,
+                should_send_native_tools,
+            )
 
-            openai_tools = studio_openai_tools(include_harness=True)
+            try:
+                prefer_native = should_send_native_tools(
+                    mode=mode,
+                    cfg=cfg,
+                    provider_id=str(
+                        resolve_active_llm().get("provider_id")
+                        or cfg.get("provider_id")
+                        or ""
+                    ),
+                    base_url=base_url,
+                    model=model,
+                )
+            except Exception:  # noqa: BLE001
+                prefer_native = should_send_native_tools(
+                    mode=mode, cfg=cfg, base_url=base_url, model=model
+                )
+
+            openai_tools = (
+                studio_openai_tools(include_harness=True) if prefer_native else None
+            )
             # Filter by switch state so disabled tools aren't offered natively
             if not terminal_enabled:
                 openai_tools = [
@@ -862,7 +918,11 @@ def send_user_message(
                     for t in openai_tools
                     if (t.get("function") or {}).get("name") != "mcp"
                 ]
-            full_system = full_system + "\n\n" + dual_path_tool_hint()
+            if openai_tools:
+                full_system = full_system + "\n\n" + dual_path_tool_hint()
+                full_system = full_system + "\n\n" + dual_path_native_hint()
+            else:
+                full_system = full_system + "\n\n" + dual_path_tool_hint()
         except Exception:  # noqa: BLE001
             openai_tools = None
 
@@ -1315,6 +1375,7 @@ def send_user_message(
             )
 
             usage: dict[str, int] = {}
+            native_tool_calls: list[dict[str, Any]] | None = None
             tools_for_call = openai_tools
             # One automatic downgrade if OpenRouter free tier rejects huge Action prompts
             prompt_limit_retried = False
@@ -1322,7 +1383,8 @@ def send_user_message(
             def _call_llm(
                 msgs: list[dict[str, Any]],
                 tools: list[dict[str, Any]] | None,
-            ) -> tuple[str, dict[str, int]]:
+            ) -> tuple[str, dict[str, int], list[dict[str, Any]] | None]:
+                want_tc = bool(tools)
                 if stream:
                     # Wrap on_stream to also log thinking tokens to activity_log
                     original_on_stream = on_stream
@@ -1339,7 +1401,7 @@ def send_user_message(
                             emit(f"💭 {thinking_buffer.strip()}", source="thinking")
                             thinking_buffer = ""
                     
-                    reply, usage = chat_completion_stream(
+                    _streamed = chat_completion_stream(
                         api_key=api_key,
                         messages=msgs,
                         model=model,
@@ -1351,13 +1413,19 @@ def send_user_message(
                         tools=tools,
                         tool_choice="auto" if tools else None,
                         normalize_tools=True,
+                        return_tool_calls=want_tc,
                     )
+                    if want_tc and isinstance(_streamed, tuple) and len(_streamed) == 3:
+                        reply, usage, native_tc = _streamed
+                    else:
+                        reply, usage = _streamed  # type: ignore[misc]
+                        native_tc = None
                     # Flush any remaining thinking buffer after streaming completes
                     if thinking_buffer.strip():
                         emit(f"💭 {thinking_buffer.strip()}", source="thinking")
-                    return reply, usage
+                    return reply, usage, native_tc
                 if _stopped():
-                    return "", {}
+                    return "", {}, None
                 result = chat_completion(
                     api_key=api_key,
                     messages=msgs,
@@ -1365,15 +1433,19 @@ def send_user_message(
                     base_url=base_url,
                     timeout=180.0,
                     return_usage=True,
+                    return_tool_calls=want_tc,
                     chat_id=str(chat_id or ""),
                     tools=tools,
                     tool_choice="auto" if tools else None,
                     normalize_tools=True,
                 )
-                return result  # type: ignore[return-value]
+                if want_tc and isinstance(result, tuple) and len(result) == 3:
+                    return result  # type: ignore[return-value]
+                reply_u, usage_u = result  # type: ignore[misc]
+                return reply_u, usage_u, None
 
             try:
-                reply, usage = _call_llm(api_messages, tools_for_call)
+                reply, usage, native_tool_calls = _call_llm(api_messages, tools_for_call)
             except LLMError as llm_err:
                 if prompt_limit_retried or not is_prompt_token_limit_error(llm_err):
                     raise
@@ -1391,7 +1463,7 @@ def send_user_message(
                     chat_id=str(chat_id or ""),
                     override_messages=ov,
                 )
-                reply, usage = _call_llm(api_messages, tools_for_call)
+                reply, usage, native_tool_calls = _call_llm(api_messages, tools_for_call)
 
             if _stopped():
                 emit("stopped by user after step")
@@ -1438,6 +1510,17 @@ def send_user_message(
                 "prompt_tokens": int(usage.get("prompt_tokens") or 0) if isinstance(usage, dict) else 0,
                 "completion_tokens": int(usage.get("completion_tokens") or 0) if isinstance(usage, dict) else 0,
             }
+            # P0.1: keep structured OpenAI tool_calls for native role:tool round-trip
+            try:
+                from app.core.services.tools.native_tool_calls import ensure_tool_call_ids
+
+                _ntc = ensure_tool_call_ids(native_tool_calls) if native_tool_calls else []
+                if _ntc:
+                    asst_msg["tool_calls"] = _ntc
+                    asst_msg["_native_tools"] = True
+                    emit(f"native tool_calls ×{len(_ntc)}")
+            except Exception:  # noqa: BLE001
+                pass
             # Parse IMAGE/VIDEO blocks so UI can render them
             asst_msg = enrich_message_with_media(
                 asst_msg,
@@ -2510,12 +2593,32 @@ def send_user_message(
             # If tools ran, this assistant was an intermediate tool-round — hide from main chat
             # so the next final answer is the only bubble (tools stay in collapsed tool trace).
             if used_tool:
+                asst_idx = -1
                 for i in range(len(hist) - 1, -1, -1):
                     if hist[i].get("role") == "assistant" and not hist[i].get("_streaming"):
                         hist[i]["_hide_ui"] = True
                         hist[i]["_tool_round"] = True
                         hist[i]["_tool_intent_only"] = True
+                        asst_idx = i
                         break
+                # P0.1: append OpenAI role:tool results paired to tool_calls
+                if asst_idx >= 0 and hist[asst_idx].get("tool_calls"):
+                    try:
+                        from app.core.services.tools.native_tool_calls import (
+                            append_native_tool_results,
+                        )
+
+                        appended = append_native_tool_results(
+                            hist,
+                            asst_index=asst_idx,
+                            tool_calls=hist[asst_idx].get("tool_calls"),
+                            at=_now(),
+                            agent_name=who,
+                        )
+                        if appended:
+                            emit(f"native role:tool results ×{len(appended)}")
+                    except Exception as _nte:  # noqa: BLE001
+                        emit(f"native tool result pairing skipped: {_nte}")
                 emit("tool round complete — continuing for final answer…")
                 if _wait_while_paused(where="after tools"):
                     break

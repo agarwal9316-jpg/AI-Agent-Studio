@@ -263,13 +263,15 @@ def dual_path_tool_hint() -> str:
     """Short system-prompt add-on explaining both paths."""
     return """
 ## Dual tool paths (both work)
-1. **Preferred text blocks** (always executed by this app):
+1. **Text blocks** (always executed by this app):
    <<<TERMINAL>>>
    Start-Process chrome
    <<<END_TERMINAL>>>
-2. **Native OpenAI function tools** (`run_terminal`, `web_search`, …) — if the API returns
-   tool_calls, the app converts them to text blocks automatically.
+2. **Native OpenAI function tools** (`run_terminal`, `web_search`, …) — when schemas are
+   sent, prefer structured tool_calls. Studio executes them and continues with role:tool
+   results (also converts to text blocks for the harness).
 3. **JSON / `<tool_call>` in content** — also auto-converted before execution.
 
-Never invent tool results. Prefer text blocks when unsure; JSON is accepted too.
+Never invent tool results. Use native tool_calls when tools schemas are present;
+text blocks and JSON still work as fallbacks.
 """.strip()

@@ -1,7 +1,7 @@
 {
   "name": "AI Agent Studio",
-  "version": "1.27.85",
-  "notes": "PENDING #20 Grok CLI session reuse skipped (research)",
+  "version": "1.27.86",
+  "notes": "P0.1 Structured OpenAI tool-calls (JSON) alongside text blocks \u2014 native role:tool round-trip",
   "download_url": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/latest",
   "source": "github"
 }

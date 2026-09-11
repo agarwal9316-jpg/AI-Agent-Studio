@@ -504,11 +504,12 @@ def _extract_reasoning_fallback(message: dict[str, Any] | None) -> str:
 def chat_completion(
     *,
     api_key: str,
-    messages: list[dict[str, str]],
+    messages: list[dict[str, Any]],
     model: str = "gpt-4o-mini",
     base_url: str = "https://api.openai.com/v1",
     timeout: float = 60.0,
     return_usage: bool = False,
+    return_tool_calls: bool = False,
     temperature: float | None = None,
     max_tokens: int | None = None,
     chat_id: str | None = None,
@@ -517,11 +518,13 @@ def chat_completion(
     normalize_tools: bool = True,
     _tools_retry: bool = True,
     _transient_retry: bool = True,
-) -> str | tuple[str, dict[str, int]]:
+) -> str | tuple[str, dict[str, int]] | tuple[str, dict[str, int], list[dict[str, Any]] | None]:
     """Call POST {base_url}/chat/completions. Returns assistant content (or content+usage).
 
     Dual path:
-      - Optional OpenAI `tools` / `tool_calls` → converted to text blocks
+      - Optional OpenAI `tools` / `tool_calls` → converted to text blocks (execution)
+      - When return_tool_calls=True, also returns raw structured tool_calls for
+        native role:tool round-trips (P0.1)
       - JSON / <tool_call> in content → normalized to text blocks
     If the provider rejects `tools`, retries once without them (text-only path).
     Transient gateway errors (524/502/503/…) retry once automatically.
@@ -565,6 +568,7 @@ def chat_completion(
                 base_url=base_url,
                 timeout=timeout,
                 return_usage=return_usage,
+                return_tool_calls=return_tool_calls,
                 temperature=temperature,
                 max_tokens=max_tokens,
                 chat_id=chat_id,
@@ -586,6 +590,7 @@ def chat_completion(
                 base_url=base_url,
                 timeout=timeout,
                 return_usage=return_usage,
+                return_tool_calls=return_tool_calls,
                 temperature=temperature,
                 max_tokens=max_tokens,
                 chat_id=chat_id,
@@ -613,6 +618,7 @@ def chat_completion(
                     base_url=base_url,
                     timeout=max(float(timeout) * 1.5, float(timeout) + 60.0),
                     return_usage=return_usage,
+                    return_tool_calls=return_tool_calls,
                     temperature=temperature,
                     max_tokens=max_tokens,
                     chat_id=chat_id,
@@ -639,6 +645,7 @@ def chat_completion(
                 base_url=base_url,
                 timeout=max(float(timeout) * 1.5, float(timeout) + 60.0),
                 return_usage=return_usage,
+                return_tool_calls=return_tool_calls,
                 temperature=temperature,
                 max_tokens=max_tokens,
                 chat_id=chat_id,
@@ -691,6 +698,18 @@ def chat_completion(
         "completion_tokens": int(usage.get("completion_tokens") or 0),
         "total_tokens": int(usage.get("total_tokens") or 0),
     }
+    raw_tool_calls: list[dict[str, Any]] | None = None
+    if isinstance(tool_calls, list) and tool_calls:
+        try:
+            from app.core.services.tools.native_tool_calls import ensure_tool_call_ids
+
+            raw_tool_calls = ensure_tool_call_ids(tool_calls) or None
+        except Exception:  # noqa: BLE001
+            raw_tool_calls = [tc for tc in tool_calls if isinstance(tc, dict)] or None
+    if return_tool_calls:
+        if return_usage:
+            return content, usage_out, raw_tool_calls
+        return content, {}, raw_tool_calls  # type: ignore[return-value]
     if return_usage:
         return content, usage_out
     return content
@@ -699,7 +718,7 @@ def chat_completion(
 def chat_completion_stream(
     *,
     api_key: str,
-    messages: list[dict[str, str]],
+    messages: list[dict[str, Any]],
     model: str = "gpt-4o-mini",
     base_url: str = "https://api.openai.com/v1",
     timeout: float = 180.0,
@@ -709,12 +728,14 @@ def chat_completion_stream(
     tools: list[dict[str, Any]] | None = None,
     tool_choice: str | dict[str, Any] | None = None,
     normalize_tools: bool = True,
+    return_tool_calls: bool = False,
     _transient_retry: bool = True,
-) -> tuple[str, dict[str, int]]:
+) -> tuple[str, dict[str, int]] | tuple[str, dict[str, int], list[dict[str, Any]] | None]:
     """
     Stream chat completions (SSE). Calls on_delta(token) for each piece.
     Falls back to non-streaming if the server rejects stream=true.
-    Returns (full_text, usage_dict). Stops early if should_stop() is True.
+    Returns (full_text, usage_dict) or (+ tool_calls) when return_tool_calls=True.
+    Stops early if should_stop() is True.
 
     Dual path: optional native `tools` + streamed tool_calls deltas merged by index;
     content JSON / <tool_call> normalized to text blocks at the end.
@@ -996,4 +1017,14 @@ def chat_completion_stream(
         }
         usage_out["total_tokens"] = usage_out["prompt_tokens"] + usage_out["completion_tokens"]
 
+    raw_tc: list[dict[str, Any]] | None = None
+    if ordered_tc:
+        try:
+            from app.core.services.tools.native_tool_calls import ensure_tool_call_ids
+
+            raw_tc = ensure_tool_call_ids(ordered_tc) or None
+        except Exception:  # noqa: BLE001
+            raw_tc = ordered_tc
+    if return_tool_calls:
+        return full, usage_out, raw_tc
     return full, usage_out

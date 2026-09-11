@@ -17213,6 +17213,9 @@ class AppWindow(ctk.CTk):
         stream_var = ctk.BooleanVar(master=opts, value=bool(cfg.get("stream_replies", True)))
         auto_proj_var = ctk.BooleanVar(master=opts, value=bool(cfg.get("auto_save_results_to_project")))
         tool_ap_var = ctk.BooleanVar(master=opts, value=bool(cfg.get("tool_approval_required")))
+        native_tools_var = ctk.BooleanVar(
+            master=opts, value=bool(cfg.get("prefer_native_openai_tools", True))
+        )
         dens_cur = str(cfg.get("chat_density") or "compact").lower()
         if dens_cur not in ("compact", "comfortable"):
             dens_cur = "compact"
@@ -17239,6 +17242,11 @@ class AppWindow(ctk.CTk):
         ).pack(side="left", padx=8, pady=6)
         ctk.CTkSwitch(
             opts, text="Require tool approval", variable=tool_ap_var
+        ).pack(side="left", padx=8, pady=6)
+        ctk.CTkSwitch(
+            opts,
+            text="Prefer native OpenAI tool calls",
+            variable=native_tools_var,
         ).pack(side="left", padx=8, pady=6)
         ctk.CTkLabel(opts, text="Chat density").pack(side="left", padx=(12, 4))
         ctk.CTkOptionMenu(
@@ -17546,6 +17554,7 @@ class AppWindow(ctk.CTk):
             self.cfg["stream_replies"] = bool(stream_var.get())
             self.cfg["auto_save_results_to_project"] = bool(auto_proj_var.get())
             self.cfg["tool_approval_required"] = bool(tool_ap_var.get())
+            self.cfg["prefer_native_openai_tools"] = bool(native_tools_var.get())
             self.cfg["self_improve_require_review"] = bool(si_review_var.get())
             # Voice (#18)
             try:

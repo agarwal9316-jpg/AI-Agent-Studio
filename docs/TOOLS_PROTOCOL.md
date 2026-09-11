@@ -11,15 +11,15 @@ Source of live instructions: `capability_manual.py` + each `*_instructions()` in
 | Path | How the model calls tools | How the app runs them |
 |------|---------------------------|------------------------|
 | **A — Text blocks** | `<<<TERMINAL>>>…<<<END_TERMINAL>>>` | Parsed directly by extractors |
-| **B — Native OpenAI tools** | API `tools` + `tool_calls` (`run_terminal`, `web_search`, …) | Converted → text blocks in `llm.py` |
+| **B — Native OpenAI tools** | API `tools` + `tool_calls` (`run_terminal`, `web_search`, …) | Execute via harness + continue with `role:tool` (`tool_call_id`); also converted → text blocks |
 | **C — JSON / XML in content** | `{"terminal":"…"}`, `<tool_call>…` | `tool_normalizer` → text blocks |
 
 Why models often pick B/C: they are trained on OpenAI function calling and XML wrappers.
-The studio **sends full tool schemas** in Action mode so native tool_calls are valid,
-and **always normalizes** content before execution so JSON still works when the provider
+The studio **sends full tool schemas** in Action mode when **Prefer native OpenAI tool calls** is on (Settings, default ON) so native tool_calls are valid,
+keeps structured `tool_calls` on the assistant message, appends `role:tool` results, and **always normalizes** content before execution so JSON/text blocks still work when the provider
 does not support tools (retry without `tools` is automatic).
 
-Pipeline: API response → `ensure_executable_tool_format` → `normalize_tool_calls` → extractors.
+Pipeline: API response → `ensure_executable_tool_format` (+ raw `tool_calls`) → `normalize_tool_calls` → extractors → `append_native_tool_results` → next LLM turn.
 
 ---
 

@@ -1,6 +1,6 @@
 # Feature inventory
 
-**Version:** 1.27.84  
+**Version:** 1.27.86  
 **Maintained here** (root `FEATURES.md` is a pointer).  
 **History:** [CHANGELOG.md](CHANGELOG.md) · resume [CONTINUITY.md](CONTINUITY.md)
 
@@ -19,6 +19,7 @@
 | Tool call audit log (export JSON/CSV) | Yes | `audit_log` · Settings · 1.27.82 |
 | Offline · Ollama (local) | Yes | Settings/Models · `ollama_local` · health + 11434 · 1.27.83 |
 | Voice in/out first-class | Yes | Settings → Voice · 🎤/🔊 · `voice_settings` · soft-degrade · 1.27.84 |
+| Native OpenAI tool_calls + role:tool | Yes | Settings toggle · `native_tool_calls` · dual-path · 1.27.86 |
 | Launch always-visible (no stuck hide) | Yes | theme pre-apply · force deiconify · no alpha-0 |
 | Browser headless→headed anti-bot fallback | Yes | `browser_tool` · captcha wait |
 | Perchance image path (portable Chromium) | Yes | `perchance_image` · may still hit site anti-bot |

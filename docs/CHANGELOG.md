@@ -8,6 +8,7 @@ Versions from `app/version.py`. Newest first within major eras.
 
 | Version | Notes |
 |---------|--------|
+| **1.27.86** | **P0.1 — Structured OpenAI tool-calls:** Action mode sends `tools` schemas when **Prefer native OpenAI tool calls** is on (Settings, default ON). Model `tool_calls` convert to text blocks for harness execution **and** continue as OpenAI `role:tool` results (`tool_call_id`). Soft-degrade if provider rejects tools; text-block / JSON paths unchanged. `native_tool_calls` + `tests/test_owui_p0_tool_calls.py`. |
 | **1.27.85** | **PENDING #20 — Grok CLI session reuse skipped:** researched official Grok Build CLI auth/sessions vs Studio; cookie/`auth.json` reuse not clearly allowed under ToS/AUP. Keep console.x.ai API key path (#1). Rationale: `docs/research/GROK_CLI_SESSION_REUSE.md`. |
 | **1.27.84** | **PENDING #18 — Voice in/out first-class:** Settings → Voice (mic/TTS enable, mic mode, language, auto read-aloud); composer 🎤 / 🔊 wired to STT/TTS with capability probes; soft-degrade when SpeechRecognition/pyttsx3/mic missing; `voice_settings` + `stt_capability` / `tts_capability`. |
 | **1.27.83** | **PENDING #17 — Offline Ollama path clearly labeled:** provider/Models UI show **Offline · Ollama (local)** (not a cloud API); editable base `http://127.0.0.1:11434`; health detect with install/start next actions; fetch local models when up, clear error when down; soft-degrades other providers. |

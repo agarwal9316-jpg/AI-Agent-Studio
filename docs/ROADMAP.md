@@ -28,7 +28,7 @@
 - [x] Automated smoke tests for tool parsers (`tests/test_trust_parsers.py`)  
 - [x] Unverified claims / Stop kill / crash restore / export redaction  
 - [x] Work board  
-- [ ] Structured OpenAI tool-calls (JSON) alongside text blocks  
+- [x] Structured OpenAI tool-calls (JSON) alongside text blocks (1.27.86)  
 - [ ] Filesystem sandbox profiles  
 - [ ] Virtualized long chat history  
 - [ ] Keep docs/ in sync on every release (process)  

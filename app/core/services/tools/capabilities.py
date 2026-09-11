@@ -14,6 +14,7 @@ from app.core.services.data.storage import load_config
 _CAP_DEFAULTS: dict[str, dict[str, Any]] = {
     "openai": {
         "chat": True,
+        "tools": True,
         "stream": True,
         "images": True,
         "vision": True,
@@ -22,6 +23,7 @@ _CAP_DEFAULTS: dict[str, dict[str, Any]] = {
     },
     "openrouter": {
         "chat": True,
+        "tools": True,
         "stream": True,
         "images": "limited",  # only some models / endpoints
         "vision": "limited",
@@ -34,6 +36,7 @@ _CAP_DEFAULTS: dict[str, dict[str, Any]] = {
     },
     "groq": {
         "chat": True,
+        "tools": True,
         "stream": True,
         "images": False,
         "vision": "limited",
@@ -42,6 +45,7 @@ _CAP_DEFAULTS: dict[str, dict[str, Any]] = {
     },
     "together": {
         "chat": True,
+        "tools": True,
         "stream": True,
         "images": "limited",
         "vision": "limited",
@@ -50,6 +54,7 @@ _CAP_DEFAULTS: dict[str, dict[str, Any]] = {
     },
     "ollama": {
         "chat": True,
+        "tools": "limited",
         "stream": True,
         "images": False,
         "vision": "limited",
@@ -58,6 +63,7 @@ _CAP_DEFAULTS: dict[str, dict[str, Any]] = {
     },
     "custom": {
         "chat": True,
+        "tools": "unknown",
         "stream": True,
         "images": "unknown",
         "vision": "unknown",
@@ -134,3 +140,10 @@ def resolve_image_model(preset_id: str = "", explicit: str = "") -> str:
             if p["id"] == preset_id and p.get("model"):
                 return p["model"]
     return (cfg.get("image_model") or "dall-e-3").strip()
+
+
+def tools_supported(caps: dict[str, Any] | None = None) -> bool:
+    """Whether native OpenAI tool_calls are expected to work for the active provider."""
+    c = caps or active_capabilities()
+    v = c.get("tools")
+    return v is True or v == "limited" or v == "unknown"

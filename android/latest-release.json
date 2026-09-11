@@ -1,8 +1,8 @@
 {
-  "tag": "v1.27.85",
-  "versionName": "1.27.85",
-  "versionCode": 85,
-  "apkUrl": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/download/v1.27.85/AI-Agent-Studio-1.27.85-debug.apk",
-  "htmlUrl": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/tag/v1.27.85",
-  "notes": "1.27.85 - #16 audit log export, #17 Offline Ollama labeling, #18 Voice in/out, #19 system tray/background, #20 Grok CLI session reuse skipped (ToS/research). Portable PC + Android companion."
+  "tag": "v1.27.86",
+  "versionName": "1.27.86",
+  "versionCode": 86,
+  "apkUrl": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/download/v1.27.86/AI-Agent-Studio-1.27.86-debug.apk",
+  "htmlUrl": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/tag/v1.27.86",
+  "notes": "1.27.86 - #16 audit log export, #17 Offline Ollama labeling, #18 Voice in/out, #19 system tray/background, #20 Grok CLI session reuse skipped (ToS/research). Portable PC + Android companion."
 }
