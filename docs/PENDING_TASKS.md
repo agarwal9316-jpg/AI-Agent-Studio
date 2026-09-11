@@ -4,8 +4,8 @@
 **Rule:** Execute **one task at a time** → test/debug → mark done → next.  
 **Status:** `pending` | `in_progress` | `done` | `blocked` | `skipped`
 
-Last updated: 2026-09-11 · App version: **1.27.84**  
-*(Tasks #1–15 done at 1.26.x; #16 audit log done at 1.27.82; #17 Offline Ollama done at 1.27.83; #18 Voice done at 1.27.84; #19 tray done at 1.27.81. Next sequential task is #20.)*
+Last updated: 2026-09-11 · App version: **1.27.85**  
+*(Tasks #1–19 done; #20 Grok CLI session reuse **skipped** — see `docs/research/GROK_CLI_SESSION_REUSE.md`. No further sequential PENDING rows.)*
 
 ---
 
@@ -32,14 +32,15 @@ Last updated: 2026-09-11 · App version: **1.27.84**
 | 17 | Offline Ollama path clearly labeled | P1 | **done** | 1.27.83 · `ollama_local` · Offline · Ollama (local) |
 | 18 | Voice in/out first-class | P2 | **done** | 1.27.84 · Settings Voice · mic/speak · soft-degrade |
 | 19 | System tray + run in background | P2 | **done** | 1.27.81 · pystray Show/Hide/Quit · start minimized |
-| 20 | Optional Grok CLI session reuse (if product/legal allows) | P2 | pending | Research first |
+| 20 | Optional Grok CLI session reuse (if product/legal allows) | P2 | **skipped** | Research: not clearly allowed (cookie/auth.json hijack disallowed/unclear). Keep API key path (#1). See `docs/research/GROK_CLI_SESSION_REUSE.md` · 1.27.85 |
 
 ---
 
-## Done log
+## Done / skipped log
 
 | # | Task | Version | Date |
 |---|------|---------|------|
+| 20 | Optional Grok CLI session reuse | 1.27.85 | 2026-09-11 · **skipped** (legal/product) |
 | 18 | Voice in/out first-class | 1.27.84 | 2026-09-11 |
 | 17 | Offline Ollama path clearly labeled | 1.27.83 | 2026-09-11 |
 | 19 | System tray + run in background | 1.27.81 | 2026-09-11 |
@@ -60,9 +61,9 @@ Last updated: 2026-09-11 · App version: **1.27.84**
 
 ## Current focus
 
-**Next sequential task:** **#20** — Optional Grok CLI session reuse (research first).
+**PENDING queue (#1–20):** complete for sequential list (#20 skipped with rationale).
 
-**App head:** **1.27.84** (Voice #18 · see CHANGELOG).
+**App head:** **1.27.85** (#20 research skip · see CHANGELOG + `docs/research/GROK_CLI_SESSION_REUSE.md`).
 
 ---
 
