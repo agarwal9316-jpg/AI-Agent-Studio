@@ -54,7 +54,7 @@ _CAP_DEFAULTS: dict[str, dict[str, Any]] = {
         "images": False,
         "vision": "limited",
         "image_models": [],
-        "notes": "Local chat; vision if multimodal model pulled; no DALL·E",
+        "notes": "Offline · Ollama (local) — local chat only; vision if multimodal model pulled; no DALL·E",
     },
     "custom": {
         "chat": True,

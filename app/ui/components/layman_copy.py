@@ -157,7 +157,7 @@ MONITOR_KPI_FRIENDLY = True  # use softer KPI labels when painting
 
 # Wizard
 WIZARD_WHERE_CLOUD = "Internet AI (recommended) — uses the key you already added"
-WIZARD_WHERE_LOCAL = "This computer only (private) — needs free Ollama software installed"
+WIZARD_WHERE_LOCAL = "Offline · Ollama (local) — this computer only; needs free Ollama software"
 WIZARD_RUNS_CLOUD = "Internet (cloud)"
 WIZARD_RUNS_LOCAL = "This computer"
 WIZARD_SUCCESS_HINT = "Your AI was saved under My AIs. You can chat with it now."

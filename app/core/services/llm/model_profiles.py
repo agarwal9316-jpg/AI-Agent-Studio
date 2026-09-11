@@ -1,4 +1,4 @@
-"""User-owned LLM profiles: cloud, local (Ollama), adapters, tool policy."""
+"""User-owned LLM profiles: cloud, Offline · Ollama (local), adapters, tool policy."""
 
 from __future__ import annotations
 
@@ -116,73 +116,32 @@ def profile_to_llm_config(profile: dict[str, Any]) -> dict[str, str]:
     }
 
 
-def ollama_list_models() -> dict[str, Any]:
-    """Query local Ollama tags."""
-    import json
-    import urllib.error
-    import urllib.request
-
-    url = "http://127.0.0.1:11434/api/tags"
+def ollama_list_models(base_url: str = "") -> dict[str, Any]:
+    """Query Offline · Ollama (local) tags (PENDING #17). Soft-degrades."""
     try:
-        req = urllib.request.Request(url, method="GET")
-        with urllib.request.urlopen(req, timeout=3) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-        models = []
-        for m in data.get("models") or []:
-            models.append(
-                {
-                    "name": m.get("name") or m.get("model"),
-                    "size": m.get("size"),
-                    "modified_at": m.get("modified_at"),
-                }
-            )
-        return {"ok": True, "models": models, "running": True}
+        from app.core.services.llm.ollama_local import list_local_models
+
+        return list_local_models(base_url=base_url)
     except Exception as e:  # noqa: BLE001
-        return {"ok": False, "models": [], "running": False, "error": str(e)}
+        return {
+            "ok": False,
+            "models": [],
+            "running": False,
+            "error": str(e),
+            "label": "Offline · Ollama (local)",
+            "next_actions": [
+                "Install Ollama from https://ollama.com",
+                "Start Ollama (ollama serve)",
+            ],
+        }
 
 
-def ollama_pull(model: str, on_line: Any = None) -> dict[str, Any]:
-    """Pull model via Ollama HTTP API (streaming NDJSON)."""
-    import json
-    import urllib.request
-
-    model = (model or "").strip()
-    if not model:
-        return {"ok": False, "error": "Model name required"}
-    body = json.dumps({"name": model, "stream": True}).encode("utf-8")
-    req = urllib.request.Request(
-        "http://127.0.0.1:11434/api/pull",
-        data=body,
-        method="POST",
-        headers={"Content-Type": "application/json"},
-    )
+def ollama_pull(model: str, on_line: Any = None, *, base_url: str = "") -> dict[str, Any]:
+    """Pull model via Offline Ollama HTTP API (streaming NDJSON)."""
     try:
-        with urllib.request.urlopen(req, timeout=3600) as resp:
-            for raw in resp:
-                line = raw.decode("utf-8", errors="replace").strip()
-                if not line:
-                    continue
-                try:
-                    chunk = json.loads(line)
-                except json.JSONDecodeError:
-                    continue
-                if on_line:
-                    try:
-                        on_line(chunk)
-                    except Exception:  # noqa: BLE001
-                        pass
-                if chunk.get("error"):
-                    return {"ok": False, "error": str(chunk.get("error"))}
-        # Register profile
-        prof = create_profile(
-            f"Ollama · {model}",
-            kind="ollama",
-            base_url="http://127.0.0.1:11434/v1",
-            model=model,
-            api_key="ollama",
-            notes=f"Pulled via Studio { _now() }",
-        )
-        return {"ok": True, "profile": prof}
+        from app.core.services.llm.ollama_local import pull_model
+
+        return pull_model(model, on_line=on_line, base_url=base_url)
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "error": str(e)}
 

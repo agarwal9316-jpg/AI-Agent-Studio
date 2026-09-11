@@ -552,7 +552,7 @@ def create_ollama_modelfile_model(
         from app.core.services.llm.model_profiles import create_profile
 
         prof = create_profile(
-            f"Ollama · {name}",
+            f"Offline · Ollama (local) · {name}",
             kind="ollama",
             base_url="http://127.0.0.1:11434/v1",
             model=name,

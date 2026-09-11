@@ -37,6 +37,7 @@ from app.core.services.ai import self_improve
 from app.core.services.ai import train_lab
 from app.core.services.llm import providers
 from app.core.services.llm import model_profiles
+from app.core.services.llm import ollama_local
 from app.core.services.misc import artifacts
 from app.core.services.misc import patch_review
 from app.core.services.misc import prompt_library
@@ -85,6 +86,7 @@ __all__ = [
     "local_embeddings",
     "providers",
     "model_profiles",
+    "ollama_local",
     "artifacts",
     "patch_review",
     "prompt_library",

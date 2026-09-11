@@ -3210,6 +3210,18 @@ class AppWindow(ctk.CTk):
         base = (active.get("base_url") or "").strip()
         pid = active.get("provider_id") or "?"
         if not key:
+            if str(pid) == "ollama" or "ollama" in (active.get("provider_name") or "").lower():
+                messagebox.showwarning(
+                    "Test connection",
+                    "Offline · Ollama (local) needs a key field (use “ollama”) and a running daemon.\n\n"
+                    "Next:\n"
+                    "• Install from https://ollama.com if needed\n"
+                    "• Start Ollama (ollama serve)\n"
+                    "• Settings → Offline · Ollama (local) → base http://127.0.0.1:11434/v1\n"
+                    "• Add key labeled ollama, Fetch models, Set active",
+                    parent=self,
+                )
+                return
             messagebox.showwarning(
                 "Test connection",
                 f"No API key for provider “{active.get('provider_name') or pid}”.\n\n"
@@ -3253,6 +3265,12 @@ class AppWindow(ctk.CTk):
                 actions.append("• Or Fetch models and pick a valid id")
             if "401" in err or "403" in err or "key" in low:
                 actions.append("• Paste a valid key for this provider in Settings")
+            if str(pid) == "ollama" or "11434" in (base or ""):
+                actions = [
+                    "• Offline · Ollama (local) — install from https://ollama.com if needed",
+                    "• Start Ollama (app or: ollama serve)",
+                    "• Confirm base URL http://127.0.0.1:11434/v1 and Fetch models",
+                ]
             if not actions:
                 actions.append("• Check base URL, model name, and network")
             messagebox.showerror(
@@ -17704,7 +17722,7 @@ class AppWindow(ctk.CTk):
 
         ctk.CTkLabel(
             frame,
-            text="LLM providers & keys — xAI Grok, OpenRouter, OpenAI, Ollama…",
+            text="LLM providers & keys — xAI Grok, OpenRouter, OpenAI, Offline · Ollama (local)…",
             font=ctk.CTkFont(size=14, weight="bold"),
             text_color=_HC_LABEL,
         ).grid(row=16, column=0, sticky="w", pady=(8, 4))
@@ -17740,7 +17758,7 @@ class AppWindow(ctk.CTk):
         state: dict[str, Any] = {"provider_id": prov.resolve_active_llm().get("provider_id") or "openrouter"}
 
         name_e = ctk.CTkEntry(form, placeholder_text="Provider name")
-        base_e = ctk.CTkEntry(form, placeholder_text="Base URL https://openrouter.ai/api/v1")
+        base_e = ctk.CTkEntry(form, placeholder_text="Base URL (Offline Ollama: http://127.0.0.1:11434/v1)")
         key_e = ctk.CTkEntry(form, placeholder_text="Paste API key", show="*")
         key_label_e = ctk.CTkEntry(form, placeholder_text="Key label e.g. personal")
         msg = ctk.CTkLabel(form, text="", text_color=_HC_MUTED, wraplength=420, justify="left")
@@ -17748,6 +17766,14 @@ class AppWindow(ctk.CTk):
 
         def load_provider(pid: str) -> None:
             state["provider_id"] = pid
+            # PENDING #17: keep Offline · Ollama label migrated
+            if pid == "ollama":
+                try:
+                    from app.core.services.llm.ollama_local import ensure_offline_label
+
+                    ensure_offline_label()
+                except Exception:  # noqa: BLE001
+                    pass
             p = prov.get_provider(pid) or {}
             name_e.delete(0, "end")
             name_e.insert(0, p.get("name") or "")
@@ -17757,10 +17783,29 @@ class AppWindow(ctk.CTk):
             cache = p.get("models_cache") or []
             models_box.insert("1.0", "\n".join(cache[:80]) if cache else "(no models cached — click Fetch models)")
             keys = p.get("keys") or []
-            msg.configure(
-                text=f"Keys stored: {len(keys)}  |  "
+            hint = (
+                f"Keys stored: {len(keys)}  |  "
                 + ", ".join(f"{k.get('label')}({k.get('id')})" for k in keys[:6])
             )
+            if pid == "ollama":
+                try:
+                    from app.core.services.llm.ollama_local import health, OFFLINE_LABEL
+
+                    h = health(p.get("base_url") or "")
+                    if h.get("running"):
+                        hint = (
+                            f"● {OFFLINE_LABEL} running · {len(h.get('model_names') or [])} local model(s). "
+                            "Key may be “ollama”. Not a cloud API."
+                        )
+                        if h.get("model_names"):
+                            models_box.delete("1.0", "end")
+                            models_box.insert("1.0", "\n".join(h["model_names"][:80]))
+                    else:
+                        tip = " → ".join(str(a) for a in (h.get("next_actions") or [])[:3])
+                        hint = f"○ {OFFLINE_LABEL} not running. Next: {tip}"
+                except Exception:  # noqa: BLE001
+                    hint = "Offline · Ollama (local) — check http://127.0.0.1:11434"
+            msg.configure(text=hint)
             refresh_plist()
 
         def refresh_plist() -> None:

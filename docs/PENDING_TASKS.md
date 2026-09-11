@@ -4,8 +4,8 @@
 **Rule:** Execute **one task at a time** → test/debug → mark done → next.  
 **Status:** `pending` | `in_progress` | `done` | `blocked` | `skipped`
 
-Last updated: 2026-09-11 · App version: **1.27.82**  
-*(Tasks #1–15 done at 1.26.x; #16 audit log done at 1.27.82; #19 tray done at 1.27.81. Next sequential task remains #17.)*
+Last updated: 2026-09-11 · App version: **1.27.83**  
+*(Tasks #1–15 done at 1.26.x; #16 audit log done at 1.27.82; #17 Offline Ollama done at 1.27.83; #19 tray done at 1.27.81. Next sequential task remains #18.)*
 
 ---
 
@@ -29,7 +29,7 @@ Last updated: 2026-09-11 · App version: **1.27.82**
 | 14 | Parallel agents with budget/time caps | P1 | **done** | PARALLEL_AGENTS + caps · 1.26.2 |
 | 15 | Sandbox / cwd lock per chat | P1 | **done** | cwd lock 🔒 · 1.26.2 |
 | 16 | Export audit log of all tool calls | P1 | **done** | 1.27.82 · `audit_log` · Settings export JSON/CSV |
-| 17 | Offline Ollama path clearly labeled | P1 | pending | |
+| 17 | Offline Ollama path clearly labeled | P1 | **done** | 1.27.83 · `ollama_local` · Offline · Ollama (local) |
 | 18 | Voice in/out first-class | P2 | pending | Partial STT exists |
 | 19 | System tray + run in background | P2 | **done** | 1.27.81 · pystray Show/Hide/Quit · start minimized |
 | 20 | Optional Grok CLI session reuse (if product/legal allows) | P2 | pending | Research first |
@@ -40,6 +40,7 @@ Last updated: 2026-09-11 · App version: **1.27.82**
 
 | # | Task | Version | Date |
 |---|------|---------|------|
+| 17 | Offline Ollama path clearly labeled | 1.27.83 | 2026-09-11 |
 | 19 | System tray + run in background | 1.27.81 | 2026-09-11 |
 | 16 | Export audit log of all tool calls | 1.27.82 | 2026-09-11 |
 | 14–15 | Parallel agents + cwd lock sandbox | 1.26.2 | 2026-08-05 |
@@ -58,9 +59,9 @@ Last updated: 2026-09-11 · App version: **1.27.82**
 
 ## Current focus
 
-**Next sequential task:** **#17** — Offline Ollama path clearly labeled.
+**Next sequential task:** **#18** — Voice in/out first-class.
 
-**App head:** **1.27.82** (tool audit #16 · see CHANGELOG).
+**App head:** **1.27.83** (Offline Ollama #17 · see CHANGELOG).
 
 ---
 

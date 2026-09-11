@@ -1,7 +1,7 @@
 {
   "name": "AI Agent Studio",
-  "version": "1.27.82",
-  "notes": "PENDING #16 export audit log of tool calls",
+  "version": "1.27.83",
+  "notes": "PENDING #17 offline Ollama path clearly labeled",
   "download_url": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/latest",
   "source": "github"
 }

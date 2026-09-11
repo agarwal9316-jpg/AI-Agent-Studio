@@ -216,7 +216,7 @@ def _build_advanced_models(app: AppWindow, body: Any, mp: Any, tl: Any) -> None:
     name_e.pack(fill="x", pady=2)
     kind_var = ctk.StringVar(master=form, value="ollama")
     ctk.CTkOptionMenu(
-        form, variable=kind_var, values=["ollama", "openai_compatible", "cloud"], width=200
+        form, variable=kind_var, values=["ollama", "openai_compatible", "cloud"]  # ollama = Offline · Ollama (local), width=200
     ).pack(anchor="w", pady=2)
     base_e = ctk.CTkEntry(form, placeholder_text="Base URL")
     base_e.insert(0, "http://127.0.0.1:11434/v1")
@@ -331,25 +331,66 @@ def _build_advanced_models(app: AppWindow, body: Any, mp: Any, tl: Any) -> None:
     ctk.CTkButton(btns, text="Test", width=70, command=test_prof).pack(side="left", padx=2)
     ctk.CTkButton(btns, text="Delete", width=70, fg_color="#a33", command=del_prof).pack(side="left", padx=2)
 
-    # Ollama
+    # Offline · Ollama (local) — PENDING #17
     ol = ctk.CTkFrame(left, fg_color="transparent")
     ol.pack(fill="x", padx=10, pady=(0, 12))
-    ctk.CTkLabel(ol, text="Ollama (local)", font=ctk.CTkFont(weight="bold"), text_color=_HC_LABEL).pack(
-        anchor="w"
-    )
+    ctk.CTkLabel(
+        ol,
+        text="Offline · Ollama (local)",
+        font=ctk.CTkFont(weight="bold"),
+        text_color=_HC_LABEL,
+    ).pack(anchor="w")
+    ctk.CTkLabel(
+        ol,
+        text="Runs on this computer only — not a cloud API. Install free Ollama if needed.",
+        text_color=_HC_MUTED,
+        wraplength=320,
+        justify="left",
+    ).pack(anchor="w")
+    ol_base = ctk.CTkEntry(ol, placeholder_text="http://127.0.0.1:11434")
+    try:
+        from app.core.services.llm.ollama_local import get_configured_host, DEFAULT_HOST
+
+        ol_base.insert(0, get_configured_host() or DEFAULT_HOST)
+    except Exception:  # noqa: BLE001
+        ol_base.insert(0, "http://127.0.0.1:11434")
+    ol_base.pack(fill="x", pady=4)
     ol_status = ctk.CTkLabel(ol, text="", text_color=_HC_MUTED, wraplength=320, justify="left")
     ol_status.pack(anchor="w")
     pull_e = ctk.CTkEntry(ol, placeholder_text="model to pull e.g. qwen2.5:7b")
     pull_e.pack(fill="x", pady=4)
 
+    def _save_ol_base() -> str:
+        raw = ol_base.get().strip() or "http://127.0.0.1:11434"
+        try:
+            from app.core.services.llm.ollama_local import set_configured_base, host_from_openai_base
+
+            set_configured_base(raw)
+            return host_from_openai_base(raw)
+        except Exception:  # noqa: BLE001
+            return raw
+
     def refresh_ollama() -> None:
-        r = mp.ollama_list_models()
+        host = _save_ol_base()
+        try:
+            from app.core.services.llm.ollama_local import health
+
+            r = health(host)
+        except Exception:  # noqa: BLE001
+            r = mp.ollama_list_models(base_url=host)
         if r.get("running"):
             names = ", ".join(str(m.get("name")) for m in (r.get("models") or [])[:12]) or "(none)"
-            ol_status.configure(text=f"● Ollama running · {names}", text_color=_UI.get("success", _HC_LABEL))
+            line = r.get("status_line") or f"● Offline · Ollama (local) running · {names}"
+            ol_status.configure(text=line, text_color=_UI.get("success", _HC_LABEL))
         else:
+            actions = r.get("next_actions") or [
+                "Install Ollama from https://ollama.com",
+                "Start Ollama (ollama serve)",
+            ]
+            tip = " → ".join(str(a) for a in actions[:3])
+            err = r.get("error") or "not running"
             ol_status.configure(
-                text=f"○ Ollama not reachable ({r.get('error')}) — start ollama serve",
+                text=f"○ Offline · Ollama (local) not running ({err}). Next: {tip}",
                 text_color=_UI.get("warning", _HC_MUTED),
             )
 
@@ -357,10 +398,11 @@ def _build_advanced_models(app: AppWindow, body: Any, mp: Any, tl: Any) -> None:
         name = pull_e.get().strip()
         if not name:
             return
+        host = _save_ol_base()
         ol_status.configure(text=f"Pulling {name}…")
 
         def work() -> None:
-            res = mp.ollama_pull(name, on_line=lambda c: None)
+            res = mp.ollama_pull(name, on_line=lambda c: None, base_url=host)
 
             def done() -> None:
                 if res.get("ok"):
@@ -368,7 +410,12 @@ def _build_advanced_models(app: AppWindow, body: Any, mp: Any, tl: Any) -> None:
                     refresh_profiles()
                     refresh_ollama()
                 else:
-                    ol_status.configure(text=f"✗ {res.get('error')}", text_color="tomato")
+                    actions = res.get("next_actions") or []
+                    extra = (" · " + " → ".join(str(a) for a in actions[:2])) if actions else ""
+                    ol_status.configure(
+                        text=f"✗ {res.get('error')}{extra}",
+                        text_color="tomato",
+                    )
 
             try:
                 app.after(0, done)
@@ -379,7 +426,9 @@ def _build_advanced_models(app: AppWindow, body: Any, mp: Any, tl: Any) -> None:
 
     obr = ctk.CTkFrame(ol, fg_color="transparent")
     obr.pack(fill="x")
-    ctk.CTkButton(obr, text="Refresh Ollama", command=refresh_ollama, width=120).pack(side="left", padx=2)
+    ctk.CTkButton(obr, text="Check Offline Ollama", command=refresh_ollama, width=150).pack(
+        side="left", padx=2
+    )
     ctk.CTkButton(obr, text="Pull model", command=do_pull, **style_chrome_button(primary=True)).pack(
         side="left", padx=2
     )

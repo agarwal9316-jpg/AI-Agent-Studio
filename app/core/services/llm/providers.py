@@ -85,10 +85,10 @@ PROVIDER_PRESETS: list[dict[str, Any]] = [
     },
     {
         "id": "ollama",
-        "name": "Ollama (local)",
+        "name": "Offline · Ollama (local)",
         "base_url": "http://127.0.0.1:11434/v1",
         "models_path": "/models",
-        "notes": "Local OpenAI-compatible; key can be ollama",
+        "notes": "Offline / local only — not a cloud API. Default http://127.0.0.1:11434. Key may be ollama",
     },
     {
         "id": "custom",
@@ -190,6 +190,13 @@ def ensure_builtin_providers(store: dict[str, Any] | None = None) -> dict[str, A
         changed = True
     if changed:
         save_providers(store)
+    # PENDING #17: keep Offline · Ollama label current on existing installs
+    try:
+        from app.core.services.llm.ollama_local import ensure_offline_label
+
+        ensure_offline_label()
+    except Exception:  # noqa: BLE001
+        pass
     return store
 
 
@@ -608,6 +615,24 @@ def fetch_models(provider_id: str, *, force: bool = False) -> list[str]:
 
     if p.get("models_cache") and not force:
         return list(p["models_cache"])
+
+    # PENDING #17: Offline Ollama — prefer native /api/tags; clear error when down
+    if str(provider_id) == "ollama":
+        try:
+            from app.core.services.llm.ollama_local import fetch_models_for_provider, OFFLINE_LABEL
+
+            res = fetch_models_for_provider(force=True)
+            if res.get("ok"):
+                return list(res.get("models") or [])
+            actions = "; ".join(res.get("next_actions") or [])
+            raise RuntimeError(
+                f"{OFFLINE_LABEL} not running: {res.get('error') or 'offline'}. "
+                f"Next: {actions}"
+            )
+        except RuntimeError:
+            raise
+        except Exception as e:  # noqa: BLE001
+            raise RuntimeError(f"Offline · Ollama (local) fetch failed: {e}") from e
 
     key = ""
     kid = store.get("active_key_id") or ""
