@@ -81,7 +81,15 @@ data/
           "enabled": true,
           "status": "idle"
         }
-      ]
+      ],
+      "flow_canvas": {
+        "version": 1,
+        "zoom": 1.0,
+        "pan_x": 0.0,
+        "pan_y": 0.0,
+        "positions": { "<node-id>": { "x": 80.0, "y": 60.0 } },
+        "edges": [ { "id": "e-…", "source": "w1", "target": "w2", "kind": "link" } ]
+      }
     }
   ]
 }
@@ -89,6 +97,7 @@ data/
 
 - AI create (`org_ai`) fills `system_prompt` / `worker_prompt` and links `agents/*.json` profiles.
 - Export strips secrets (`export_graph_safe`).
+- **Flow canvas (1.28.0):** optional `flow_canvas` on each graph — positions, zoom/pan, extra `kind=link` edges (hierarchy still from `parent_id`). Serialize/load via `flow_canvas.serialize_flow_graph` / `load_flow_graph`.
 - Diagnostics: `data/logs/app.log`, `data/logs/org_ai.log` (JSON lines via `app.services.app_log`).
 
 ---

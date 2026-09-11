@@ -1,7 +1,7 @@
 {
   "name": "AI Agent Studio",
-  "version": "1.27.99",
-  "notes": "Studio bundle export/import \u2014 portable data zip (config redacted by default, knowledge/notes/channels/automations/chats metadata/artifacts index); Settings+About UI; merge/replace import; soft-degrade",
+  "version": "1.28.0",
+  "notes": "Richer flow canvas \u2014 Org chart page toggle to node+edge canvas (pan/zoom, drag, link, add/remove, save/load with workflow store); soft-degrade CustomTkinter only; org chart unchanged",
   "download_url": "https://github.com/agarwal9316-jpg/AI-Agent-Studio/releases/latest",
   "source": "github"
 }

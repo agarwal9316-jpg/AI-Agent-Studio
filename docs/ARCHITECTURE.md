@@ -21,7 +21,7 @@
 | ADR-010 | Run model | sequential tasks + transcript | Locked |
 | ADR-011 | LLM | OpenAI-compatible HTTP (stdlib urllib) | Locked |
 | ADR-012 | Frameworks | Study only; no hard AutoGen/CrewAI dep | Locked |
-| ADR-013 | Flow canvas | Simplified workflow **tree** (not full Langflow) | Locked |
+| ADR-013 | Flow canvas | Tree + optional richer **node–edge canvas** (CustomTkinter; not Langflow/Electron) | Locked |
 | ADR-014 | Continuity | README + Launch + **docs/** | Locked |
 | ADR-015 | Launch | **Launch.bat** mandatory primary entry | Locked |
 | ADR-016 | Browser | Portable Playwright browsers under `./browsers` | Locked |

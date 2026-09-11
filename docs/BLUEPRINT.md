@@ -69,7 +69,7 @@ Inspired by AutoGen / CrewAI / Dify / Langflow **patterns only** — original co
 | Knowledge | FTS + local embeddings | `services/rag_knowledge.py` |
 | Skills / MCP | Playbooks + stdio MCP | `skills_registry`, `mcp_*` |
 | Company | Goals, tasks, approvals, workers | `company_store`, `orchestrator` |
-| Workflow graph | Org tree editor | `workflow_graph.py`, UI Workflow |
+| Workflow graph | Org tree + Flow canvas | `workflow_graph.py`, `flow_canvas.py`, Org chart UI |
 | Approvals | Tool + company queues | `tool_approvals`, CEO page |
 | Self-improve | Backup / patch / rollback | `self_improve.py` |
 | Schedule | Timed company tasks | `scheduler_service.py` |
@@ -97,7 +97,7 @@ Inspired by AutoGen / CrewAI / Dify / Langflow **patterns only** — original co
 |-----------------|---------------------|
 | Grok host `spawn_subagent` | Multiple chats / company roles / terminal |
 | Grok `.rhai` workflows | Workflow graph + company queue |
-| Full Langflow canvas clone | Workflow tree (simplified) |
+| Full Langflow canvas clone | Workflow tree + optional richer Flow canvas (CustomTkinter; not Electron) |
 | Silent self-heal of every bad reply | Explicit SELF_IMPROVE / user request |
 
 ---

@@ -1,6 +1,6 @@
 # Continuity — resume without chat history
 
-**Head:** 1.27.99 — Studio bundle export/import (branch `feat/roadmap-studio-bundle`).
+**Head:** 1.28.0 — Richer flow canvas (branch `feat/roadmap-flow-canvas`).
 
 
 **Goal:** After months, open the project folder and continue.
@@ -25,7 +25,8 @@
 
 ## Resume here (update every release)
 
-- **Last version:** **1.27.99** (Studio bundle export/import — portable data zip; secrets redacted by default; Settings+About; merge/replace)
+- **Last version:** **1.28.0** (Richer flow canvas — Org chart ↔ Flow canvas toggle; nodes/edges pan/zoom/link; persist with workflow store; soft-degrade)
+- **Prior:** **1.27.99** (Studio bundle export/import — portable data zip; secrets redacted by default; Settings+About; merge/replace)
 - **Prior:** **1.27.98** (Docs sync process — `scripts/check_docs_sync.py` + RELEASE checklist; enforced VERSION trio / CHANGELOG / CONTINUITY / FEATURES)
 - **Prior:** **1.27.97** (Virtualized long chat history — sliding window 50/max 200; Load older/newer; soft-degrade; no stream full-rebuild)
 - **Prior:** **1.27.96** (Filesystem sandbox profiles — Read-only workspace / Project-only / Full disk with ask; custom roots; file+shell enforce)
@@ -43,7 +44,7 @@
 - **Chat UI:** Grok-style rail · ⋯ menus · composer pill · Ctrl+K · slash cmds  
 - **Launch:** double-click **`Launch.bat`** (source; do not use stale dist exe for org UI)  
 - **Portable:** **`Launch_Portable.bat`** after rebuild  
-- **Flow:** Launch → Chat · **Organisation** (chart) · Team · Approvals / Knowledge / CEO as needed  
+- **Flow:** Launch → Chat · **Org chart** (Org chart | Flow canvas) · Team · Approvals / Knowledge / CEO as needed  
 - **Features:** [FEATURES.md](FEATURES.md) · history [CHANGELOG.md](CHANGELOG.md)  
 - **Blueprint:** [BLUEPRINT.md](BLUEPRINT.md)  
 

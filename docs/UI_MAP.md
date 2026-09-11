@@ -1,7 +1,7 @@
 # UI Map
 
 **Toolkit:** CustomTkinter  
-**Version:** 1.27.94 (keep in sync with `app/version.py`)
+**Version:** 1.28.0 (keep in sync with `app/version.py`)
 
 ---
 
@@ -96,7 +96,7 @@ Chrome colors from `app/services/themes.py` → `UI` + `style_*` helpers (forced
 | **Projects** | Project scope |
 | **Company** | Roles / work queue |
 | **CEO** | Goals, Run plan, approval mode, pending |
-| **Organisation / Workflow** | Visual org chart (see §3a) |
+| **Organisation / Workflow** | Visual org chart + Flow canvas toggle (see §3a) |
 | **Team** | Teams-style channels + org pipeline runs |
 | **Knowledge** | Index files/folders, watch, search |
 | **Approvals** | Tool + company pending |
@@ -116,6 +116,8 @@ Chrome colors from `app/services/themes.py` → `UI` + `style_*` helpers (forced
 | Chart actions | + Add AI Worker · Search workers |
 | Chart canvas | CEO top · branch columns · continuous connectors · card + / ▾ |
 | Chart view tools | Expand all · Collapse all · 🖐 Drag view · wheel/pan · **Reset · CEO top + collapse teams** |
+| View toggle | **Org chart** · **Flow canvas** (nodes+edges, pan/zoom, Link, Save layout) |
+| Flow canvas tools | + Node · Link · Unlink · Delete · Auto layout · Fit · 🖐 Pan · Save layout · ± zoom |
 | Right: **All organisations** | List every chart (Test SWAT, Beta Org, …) · ☑ Select all · Open / Rename / Copy / New / Delete |
 | Right: **Workers in this org** | Full tree list · ☑ bulk · + per row · × remove |
 | Right: **Selection details** | Title, order, instructions, role, goal, quick LLM · Save / Config / Inspect / Remove |

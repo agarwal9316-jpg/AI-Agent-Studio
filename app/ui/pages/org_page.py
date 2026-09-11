@@ -21,6 +21,7 @@ _HC_LABEL = _THEME_UI["label"]
 from app.services import storage as agent_storage
 from app.services import workflow_graph as wfg
 from app.ui.pages.org_chart_view import OrgChartPanel
+from app.ui.pages.flow_canvas_view import FlowCanvasPanel
 from app.ui.pages.org_worker_dialogs import (
     confirm_remove_worker,
     open_move_worker,
@@ -50,8 +51,9 @@ def page_workflow(app: AppWindow) -> None:
     ctk.CTkLabel(
         root,
         text=(
-            "Right panel: All organisations (Test SWAT, Beta Org, …) — open / rename / delete with ☑. "
-            "Workers in this org — tree with + / ☑. Click cards on the left or rows on the right."
+            "Right panel: All organisations — open / rename / delete with ☑. "
+            "Left: Org chart or Flow canvas (nodes+edges, pan/zoom, link, save). "
+            "Workers list on the right."
         ),
         text_color=_HC_MUTED,
         wraplength=960,
@@ -69,6 +71,7 @@ def page_workflow(app: AppWindow) -> None:
         "sec_list": True,
         "sec_details": True,
         "sec_preview": False,
+        "view_mode": "org",  # org | flow
         "check_vars": {},  # worker id -> BooleanVar
         "chart_check_vars": {},  # graph id -> BooleanVar
         "list_rows": {},  # worker id -> row frame (soft highlight)
@@ -1180,6 +1183,53 @@ def page_workflow(app: AppWindow) -> None:
     )
     chart.grid(row=2, column=0, sticky="nsew", padx=6, pady=6)
 
+    flow = FlowCanvasPanel(
+        left,
+        on_select=lambda n: _handlers["select"](n),
+        on_menu_action=lambda a, n: _handlers["menu"](a, n),
+        on_changed=lambda: None,  # wired after refresh_structure defined
+    )
+    # flow shown via set_view_mode("flow")
+
+    def set_view_mode(mode: str) -> None:
+        mode = "flow" if mode == "flow" else "org"
+        state["view_mode"] = mode
+        try:
+            if mode == "flow":
+                chart.grid_remove()
+                flow.grid(row=2, column=0, sticky="nsew", padx=6, pady=6)
+                flow.render(state["graph"], selected_id=state.get("selected_id"))
+                view_org_btn.configure(fg_color=None)
+                view_flow_btn.configure(fg_color=("#2563eb", "#1d4ed8"))
+            else:
+                flow.grid_remove()
+                chart.grid(row=2, column=0, sticky="nsew", padx=6, pady=6)
+                chart.render(state["graph"], selected_id=state.get("selected_id"))
+                view_flow_btn.configure(fg_color=None)
+                view_org_btn.configure(fg_color=("#2563eb", "#1d4ed8"))
+        except Exception as e:  # noqa: BLE001
+            app.set_status(f"View switch: {e}", toast=False)
+
+    # Pack view toggle on the actions toolbar (right side)
+    view_flow_btn = ctk.CTkButton(
+        actions,
+        text="Flow canvas",
+        width=100,
+        height=28,
+        command=lambda: set_view_mode("flow"),
+        **style_chrome_button(),
+    )
+    view_flow_btn.pack(side="right", padx=2)
+    view_org_btn = ctk.CTkButton(
+        actions,
+        text="Org chart",
+        width=88,
+        height=28,
+        command=lambda: set_view_mode("org"),
+        **style_chrome_button(primary=True),
+    )
+    view_org_btn.pack(side="right", padx=2)
+
     # ========== RIGHT: collapsible panel (list + selection details) ==========
     right = ctk.CTkFrame(root)
     right.grid(row=2, column=1, sticky="nsew", padx=(8, 0))
@@ -2128,6 +2178,11 @@ def page_workflow(app: AppWindow) -> None:
             chart.set_selection(str(node.get("id") or ""))
         except Exception:  # noqa: BLE001
             pass
+        try:
+            if state.get("view_mode") == "flow":
+                flow.set_selection(str(node.get("id") or ""))
+        except Exception:  # noqa: BLE001
+            pass
 
         title_e.delete(0, "end")
         title_e.insert(0, node.get("title") or "")
@@ -2235,8 +2290,11 @@ def page_workflow(app: AppWindow) -> None:
             i for i in (state.get("chart_checked_ids") or set()) if i in live_chart_ids
         }
         try:
-            # render() is soft when structure signature unchanged
-            chart.render(g, selected_id=state.get("selected_id"))
+            if state.get("view_mode") == "flow":
+                flow.render(g, selected_id=state.get("selected_id"))
+            else:
+                # render() is soft when structure signature unchanged
+                chart.render(g, selected_id=state.get("selected_id"))
         except Exception as e:  # noqa: BLE001
             app.set_status(f"Chart render error: {e}", toast=False)
         if lists:
@@ -2256,6 +2314,19 @@ def page_workflow(app: AppWindow) -> None:
                 preview.configure(state="disabled")
             except Exception:  # noqa: BLE001
                 pass
+
+    def _flow_changed() -> None:
+        state["graph"] = wfg.get_active_graph()
+        # Keep list/preview in sync after canvas save / add
+        try:
+            refresh_structure(lists=True, preview_text=True)
+        except Exception:  # noqa: BLE001
+            pass
+
+    try:
+        flow._on_changed = _flow_changed  # noqa: SLF001 — late bind
+    except Exception:  # noqa: BLE001
+        pass
 
     def _after_save() -> None:
         state["graph"] = wfg.get_active_graph()

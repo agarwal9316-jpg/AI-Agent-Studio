@@ -1,11 +1,12 @@
 # Feature inventory
 
-**Version:** 1.27.99  
+**Version:** 1.28.0  
 **Maintained here** (root `FEATURES.md` is a pointer).  
 **History:** [CHANGELOG.md](CHANGELOG.md) · resume [CONTINUITY.md](CONTINUITY.md)
 
 | Feature | Status | Where |
 |---------|--------|--------|
+| **Richer flow canvas** | Yes | Org chart → **Flow canvas** · nodes+edges · pan/zoom/drag/link · save with `workflow_graph` · `flow_canvas` · soft-degrade · 1.28.0 |
 | **Studio bundle export/import** | Yes | Settings + About · portable `data/` zip · secrets redacted by default · merge/replace · `studio_bundle` · 1.27.99 |
 | **Docs sync release gate** | Yes | `scripts/check_docs_sync.py` · `docs/RELEASE.md` · CI-style local check · 1.27.98 |
 | **AI Organisation chart (visual)** | Yes | Org/Workflow page · `org_chart_view` · CEO top, branch columns, cards |

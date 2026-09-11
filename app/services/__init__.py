@@ -46,6 +46,7 @@ from app.core.services.misc import studio_bundle
 from app.core.services.misc import patch_review
 from app.core.services.misc import prompt_library
 from app.core.services.misc import workflow_graph
+from app.core.services.misc import flow_canvas
 from app.core.services.tools import tool_approvals
 from app.core.services.tools import tool_budget
 from app.core.services.system import ops_monitor
@@ -106,6 +107,7 @@ __all__ = [
     # Lazy-loaded (circular import safe)
     "org_execution",
     "workflow_graph",
+    "flow_canvas",
 ]
 
 
