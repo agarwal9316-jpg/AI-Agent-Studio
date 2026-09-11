@@ -1,0 +1,11 @@
+customtkinter>=5.2.0
+packaging>=23.0
+pyautogui>=0.9.54
+Pillow>=10.0.0
+# LLM native tools (portable)
+playwright>=1.40.0
+pypdf>=4.0.0
+# Chromium is auto-installed into ./browsers by Launch.bat when missing.
+# Optional mic STT:
+# SpeechRecognition>=3.10.0
+# pyaudio>=0.2.13

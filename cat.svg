@@ -1,0 +1,56 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <radialGradient id="bodyGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#f5a623"/>
+      <stop offset="100%" style="stop-color:#d4891a"/>
+    </radialGradient>
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#e8f4f8"/>
+      <stop offset="100%" style="stop-color:#b8d4e8"/>
+    </radialGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="400" height="400" rx="20" fill="url(#bgGrad)"/>
+  <!-- Body -->
+  <ellipse cx="200" cy="260" rx="90" ry="80" fill="url(#bodyGrad)"/>
+  <!-- Head -->
+  <circle cx="200" cy="160" r="70" fill="#f5a623"/>
+  <!-- Left ear -->
+  <polygon points="145,110 130,40 170,100" fill="#f5a623" stroke="#d4891a" stroke-width="2"/>
+  <polygon points="150,105 138,55 168,100" fill="#fce4b8"/>
+  <!-- Right ear -->
+  <polygon points="255,110 270,40 230,100" fill="#f5a623" stroke="#d4891a" stroke-width="2"/>
+  <polygon points="250,105 262,55 232,100" fill="#fce4b8"/>
+  <!-- Eyes -->
+  <ellipse cx="175" cy="155" rx="15" ry="18" fill="white"/>
+  <ellipse cx="225" cy="155" rx="15" ry="18" fill="white"/>
+  <ellipse cx="178" cy="155" rx="8" ry="10" fill="#2e7d32"/>
+  <ellipse cx="228" cy="155" rx="8" ry="10" fill="#2e7d32"/>
+  <ellipse cx="178" cy="155" rx="4" ry="5" fill="black"/>
+  <ellipse cx="228" cy="155" rx="4" ry="5" fill="black"/>
+  <ellipse cx="180" cy="152" rx="2" ry="2" fill="white"/>
+  <ellipse cx="230" cy="152" rx="2" ry="2" fill="white"/>
+  <!-- Nose -->
+  <polygon points="200,170 195,178 205,178" fill="#e57373"/>
+  <!-- Mouth -->
+  <path d="M195,178 Q200,185 200,180" stroke="#333" stroke-width="1.5" fill="none"/>
+  <path d="M200,180 Q200,185 205,178" stroke="#333" stroke-width="1.5" fill="none"/>
+  <!-- Whiskers -->
+  <line x1="160" y1="172" x2="120" y2="165" stroke="#333" stroke-width="1.2"/>
+  <line x1="160" y1="178" x2="118" y2="180" stroke="#333" stroke-width="1.2"/>
+  <line x1="160" y1="184" x2="122" y2="195" stroke="#333" stroke-width="1.2"/>
+  <line x1="240" y1="172" x2="280" y2="165" stroke="#333" stroke-width="1.2"/>
+  <line x1="240" y1="178" x2="282" y2="180" stroke="#333" stroke-width="1.2"/>
+  <line x1="240" y1="184" x2="278" y2="195" stroke="#333" stroke-width="1.2"/>
+  <!-- Paws -->
+  <ellipse cx="150" cy="330" rx="25" ry="15" fill="#f5a623"/>
+  <ellipse cx="250" cy="330" rx="25" ry="15" fill="#f5a623"/>
+  <!-- Paw pads -->
+  <circle cx="150" cy="328" r="4" fill="#fce4b8"/>
+  <circle cx="250" cy="328" r="4" fill="#fce4b8"/>
+  <!-- Tail -->
+  <path d="M290,260 Q340,220 330,180 Q320,150 300,160" stroke="#f5a623" stroke-width="14" fill="none" stroke-linecap="round"/>
+  <!-- Stripes -->
+  <path d="M170,120 Q200,115 230,120" stroke="#d4891a" stroke-width="3" fill="none" opacity="0.5"/>
+  <path d="M165,135 Q200,128 235,135" stroke="#d4891a" stroke-width="3" fill="none" opacity="0.5"/>
+</svg>

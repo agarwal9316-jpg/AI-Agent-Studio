@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AI Agent Studio</string>
+    <string name="version_fmt">Version %1$s</string>
+    <string name="check_updates">Check for updates</string>
+    <string name="open_releases">Open Releases</string>
+    <string name="pc_guide">PC quick start</string>
+    <string name="docs">Documentation</string>
+    <string name="companion_blurb">Companion for the Windows portable studio</string>
+</resources>

@@ -1,0 +1,206 @@
+# Changelog
+
+Versions from `app/version.py`. Newest first within major eras.
+
+---
+
+## 1.7.x — Operator studio
+
+| Version | Notes |
+|---------|--------|
+| **1.27.80** | **Thinking shows every step:** Working said 66 but the expander only painted the last 16–24. The bubble now lists the full step list (same count as Working) and snapshots keep the original step objects, not a truncated humanize-only copy. |
+| **1.27.79** | **Chat list owns the mouse wheel:** long replies used an inner CTk box + animated scroller, so the wheel never moved the list and text spilled under Live. Replies grow with the transcript; bind_all routes wheel to the list (not composer/Live). SET_GOAL tags stripped from the bubble. |
+| **1.27.78** | **Chat scroll with in-bubble thinking:** nested CTk textboxes in the thinking expander stole the wheel and left a stale scrollregion. Thinking is labels only; expand/collapse rebinds the wheel and updates the canvas without jumping to the bottom. |
+| **1.27.77** | **Thinking lives in each reply bubble:** expand/collapse on the assistant card (no separate Thinking tab). Current/raw no longer stay blank — they fall back to the step text. Live defaults to Terminal. |
+| **1.27.76** | **Chat is not silent:** tool-only turns and thinking were hidden, so the bubble looked empty. Chat now shows a short “What the model is doing” log (command ok/FAIL + error line) and thinking cards. The model is told to write 2–4 status sentences before tools. |
+| **1.27.75** | **Findings window with checkboxes:** click Findings (or the summary line) for the full list. Checked = still open (sent to the model). Uncheck = resolved. You toggle in the GUI; the LLM can `<<<RESOLVE_FINDING>>>` / `<<<REOPEN_FINDING>>>`. |
+| **1.27.74** | **Findings list is task memory:** context window is only this-turn RAM. Studio now keeps a de-duped per-chat list of errors/edits (auto from tools + optional `<<<FINDING>>>`). Injected every send, shown under the goal, included in Run cycle. Old chats backfill from stored tracebacks. |
+| **1.27.73** | **Agent can actually finish Windows launch tasks:** terminal now quotes spaced paths and runs `cd /d … &&` via cmd.exe (not PowerShell). Exit 0 + `ModuleNotFoundError` is a failure. `type`/`Get-Content` of source is rejected (use READ_FILE). Same `dir` cannot loop forever. API context drops hidden tool dumps. Cycle poke demands 3 bullets + one new action + window proof. |
+| **1.27.72** | **You can see what the LLM is doing:** Live was a 260px sliver and Chat hid tool work as a white hole / “Working with tools.” A full-width **NOW ·** line under the goal shows the current step, Live is ~40% of Chat, and tool stubs use that same line. |
+| **1.27.71** | **Thinking tab scroll no longer errors/jumps:** live tokens were rebuild+`yview_moveto` plus a 60fps smooth-scroll `after` on dead widgets (Tcl invalid command). Cards update in place; wheel binds on new cards; parent list only follows the latest step when you are already at the bottom. |
+| **1.27.70** | **Cycle retries after HTTP 500:** a provider 5xx/429/timeout flipped LLM to ERROR, and auto-continue only ran when idle — so the cycle looked dead. Transient errors now retry the same live goal after 15s (up to 8 times). Auth/4xx still stop. |
+| **1.27.69** | **LLM can set the live goal; Run cycle follows it:** banner no longer locks onto junk lines like “update the goal”. It reads `<<<SET_GOAL>>>`, `{"action":"set_goal"}`, and prose (`## My Goal:`, “your original goal was”). Auto-continue now sends that goal. Finish no longer wipes the persisted goal. |
+| **1.27.68** | **Last lines of a bubble are not clipped:** height was estimated short so wrapped text lost the bottom of each paragraph. After insert we measure display-lines and grow the box. |
+| **1.27.67** | **Readable chat bubbles:** CTk textboxes inside the scroll list collapsed to a 2-letter-wide column. Inner frame now matches the canvas; Live is capped; assistant/user are high-contrast cards with a real wrap width. |
+| **1.27.66** | **Goal follows the conversation:** the banner prefers an LLM `<<<SET_GOAL>>>` / `{"action":"set_goal"}` or “Current goal:” in the reply, then the latest real user ask. User-edited goals stay pinned. |
+| **1.27.65** | Goal banner skips “Continue…” pokes so the real task stays visible. |
+| **1.27.64** | **Goal banner at the top of Chat:** a full-width strip shows **PENDING / WORKING / DONE** plus the current LLM goal (latest real user task, not auto-continue). Click the text to edit the goal. |
+| **1.27.63** | **Auto-compact uses the real model limit:** send already dropped middle turns into a rolling summary, but the budget was the saved 128k window so Nemotron (~32k) never compacted and still hit truncate/500s. Trim now uses min(your window, model max). Context dialog documents this and has **Compact now**. |
+| **1.27.62** | **Context window is on the Chat strip and editable:** Compact mode hid Context… on the Comfort bar. Cycle bar now has **Context** plus a `ctx 128k` chip. The dialog shows window size and the actual ### system/user/assistant prompt; Save all writes numbers and optional edited content for the next send. |
+| **1.27.61** | **Whole chat from the start:** the canvas always painted only the last 80 stored messages, so Load older / Show all never reached “hi”. The window now grows; **From start** paints message 1 and jumps to the top; scrolling to the top loads +120 older. |
+| **1.27.60** | **Blank left menu + stuck Thinking scroll:** Hide/Show menu could leave a white 212px hole (sidebar gone, ☰ strip also hidden). Always show the full menu or the ☰ strip, and rebuild the rail if it is empty. Thinking no longer `yview_moveto(1.0)` on every step — follow-latest is throttled so you can scroll the cards. |
+| **1.27.59** | **Show chats / expand actually restore the list:** Hide chats and One-screen hid the rail, then `show_page("Chat")` skipped the rebuild so the history list never came back and collapse looked broken. Toggle now shows/hides the rail in place; if it was built as an icon strip, Chat rebuilds with the full list. |
+| **1.27.58** | **Task + LLM status and a Run/Stop cycle:** Chat top bar shows **Task · open/achieved** and **LLM · working/idle**. **▶ Run cycle** auto-sends Continue when the task is still open and the model goes idle; **■ Stop cycle** turns that off and stops the current turn. Click Task to mark done. |
+| **1.27.57** | **White Chat after Restore:** `show_page("Chat")` three times destroyed `chat_scroll` while the previous paint still ran (`TclError: bad window path`). Skip rebuild when Chat is already open; Restore only re-paints; stale renders abort; dead scroll is recreated; fallback paints last messages instead of a blank canvas. |
+| **1.27.56** | **Chat render errors are visible:** a failed transcript paint no longer stays silently white — the exception is shown in the canvas and written to `data/_chat_render_debug.txt`. Reloads the active chat if state has no messages. |
+| **1.27.55** | **Never leave a white Chat canvas:** if every tail message is a hidden tool-round, paint the last user/assistant anyway. Live defaults to **Thinking**. |
+| **1.27.54** | **Launch on Chat when a session exists:** startup was Home, so Restore could leave Org selected and a white canvas with “Empty message”. If `active_chat_id` is set, first page is Chat; Restore re-opens Chat twice after the dialog. |
+| **1.27.53** | **Restore always opens Chat; long chats paint a tail:** after Restore the sidebar could sit on Org while the transcript stayed white (finalize of 400+ messages on first paint). Restore forces Chat again; the canvas only renders the last 80 messages and never truncates the saved file. |
+| **1.27.52** | **Chat no longer goes blank while Thinking:** a send used to destroy the transcript first, then freeze on a 400-message rebuild — white page, red Stop, empty Thinking tab. Build the display list first; while busy only paint the last 40 messages and skip media/finalize. |
+| **1.27.51** | **Thinking tab = real LLM thought, not only phases:** each step is a card with collapse/expand, **Current** (status) and **Raw thinking**. New steps auto-collapse the previous one; 💭 stream chunks accumulate on the open “LLM thinking” card instead of becoming “Receiving answer…”. Collapse all / Expand last in the toolbar. |
+| **1.27.50** | **Stop the chat list jump-loop:** every stream/thinking tick called scroll-to-end (plus 16/80/200ms repeats), so the transcript looked stuck scrolling. Follow-latest is throttled; stream bubble height stays fixed; thinking cards no longer yank the list. |
+| **1.27.49** | **Don’t freeze on the last “let me…”:** pass 50/50 used to skip the unfinished-work nudge, so Chat sat on Ready after “Let me check if it starts”. The nudge now runs on the last pass too. |
+| **1.27.48** | **Stop echoing “tool work omitted”:** shrink stubs are no longer sent back as assistant turns (the model was copying them and stopping). That placeholder counts as unfinished work so the loop keeps going. |
+| **1.27.47** | **Full replies + smooth inner scroll:** answers are no longer cut at 500 characters. Long bubbles stay on one screen and scroll smoothly inside the reply (wheel over the text); at the top/bottom the chat list keeps moving. Tool/file dumps still stay in Live. |
+| **1.27.46** | **Unclosed tool dumps stay out of chat:** Nemotron often emits `<<<TERMINAL>>> $content = @'…` with no `END` tag, so the file body painted as the answer. Strip now drops unclosed blocks and here-strings; leftover `<<<` / `@'` bubbles become a one-line Live pointer. Comfort chrome no longer stays on by default (it hid the transcript). |
+| **1.27.45** | **Pin Nemotron 550 + clean chat:** NVIDIA Integrate no longer snaps to catalog `models[0]` (yi-large / llama vision). Fetch/provider/OptionMenu keep the pinned model unless the user picks another. Tool dumps are stubbed in the bubble, truncated in API context, and thinking cards stay in Live (not the transcript). One-screen hides the chat list; rail no longer duplicates One screen / Menu. Idle Stop is gray. Junk draft `???` and leftover `Desktop\\AI` folder attaches are dropped. |
+| **1.27.44** | **Chat is the answer; Live is the monitor:** tool dumps / here-strings / `<tool_call>` stay out of the main bubble (short line + “see Live”). Live / Thinking / Terminal opens automatically on send and stays open in one-screen. Streaming file dumps go to Live → Terminal, not the transcript. |
+| **1.27.43** | **One-screen no longer wipes Chat:** toggling One screen / Hide menu only shows or hides chrome — it does not rebuild the page (that blanked the transcript). ☰ strip also has Exit one-screen (▣). |
+| **1.27.42** | **One-screen chat:** Chat top bar now has **☰ Hide/Show menu**, **Hide/Show chats**, **One screen**, **CPU bar**. ⋯ menu and Ctrl+K include the same View actions. One-screen hides the left menu, chat list, and CPU bar so the conversation fills the window; Esc or **Exit one-screen** restores. A ☰ strip stays on the left when the menu is collapsed. |
+| **1.27.41** | **Keep working, stay findable:** PRIMARY cannot hide Chat; status bar shows *this session* tokens (not a 30M all-time dump); clipboard auto-attach only if the clipboard *is* a path, not a sentence that mentions one; if the model says “let me…” with no tool, the loop nudges and continues (up to 3 times); idle Stop is gray. |
+| **1.27.40** | **Nemotron `{"action":"search_replace",...}` actually runs:** Ultra 550 dumps that JSON (and `<tool_call>{...}`) as the user-visible answer. Normalizer now maps `action` + `old`/`new` to `<<<SEARCH_REPLACE>>>` so the harness executes the edit instead of printing it. |
+| **1.27.39** | **Model picker actually applies the filtered model:** Chat opened on `models[0]` (e.g. 01-ai/yi-large) instead of the saved NVIDIA model; Find → type Nemotron → Select still kept the old model. Default to the active model; Select uses the unique filter match. |
+| **1.27.38** | **Chat blank white page:** opening Chat crashed on missing widget-name helpers (`name_page_sidebar` and related names never imported / not defined). Chat rail drew empty then the rest of the page never built. Import + define the helpers; page-build errors now show Retry / Go Home instead of a silent white pane. Composer paints first; huge bubbles are truncated so the transcript cannot freeze the window white. |
+| **1.27.37** | **Trackpad scrolling overhaul:** cross-platform smooth scrolling with animated spring physics, momentum/inertia for trackpad flings, high-precision trackpad support (Surface, MacBook, Dell precision), normalized deltas across Windows/macOS/Linux, horizontal scroll via Shift+wheel. New `SmoothScroller` class in `app/ui/components/scroll.py` with configurable animation, momentum, and step size. |
+| **1.27.36** | **Critical launch fix:** resolved 17 corrupted __init__.py files (UTF-16 LE BOM garbage) and all circular imports preventing app launch. Fixed import paths after folder reorganization (pp.services -> pp.core.services.* compatibility layer with lazy loading via __getattr__ and getter functions). App now launches with .venv/Scripts/python -m app
+| **1.27.35** | **Critical stability fixes:** blank white screen on page switch (persistent bg frame); all tkinter Variable master arguments fixed across app_window, models_page, org_page, mgmt_pages, team_page; default root window set for CTkFont operations — eliminates "no default root window" and "Variable master not specified" crashes |
+| **1.27.34** | **Stuck “Chat is busy” fixed:** Stop force-unlocks after 1.5s (or double-click Stop); Send auto-clears busy after 45s; 6‑min watchdog; worker crash always unlocks; finish always clears busy; abandon zombie agent runs on launch |
+| **1.27.33** | **Thinking UI:** collapsed ~36px one-line live status (not a huge box); expand = fixed ~100px step list; humanized steps (Searching / Model thinking / Writing…); history cards same compact pattern |
+| **1.27.32** | **Visual quality audit** (scroll/contrast/flicker): system-message bubble text darkened for WCAG AA; suite `tests/gui_visual_quality_audit.py` |
+| **1.27.31** | **GUI walkthrough suite** (`tests/gui_walkthrough_folder_chat.py`); folder ＋ uses `after_idle` (more reliable than `after(10)`); empty-chat CTk transparent fix remains |
+| **1.27.30** | **Empty new-chat crash (folder ＋):** CTk 6 rejects `fg_color=("transparent","transparent")` on starter chips → empty transcript render aborted so new chat looked incomplete; use `fg_color="transparent"`. Verified via live GUI test |
+| **1.27.29** | **New chat in folder = full session:** shared `_open_new_chat` (project, tool defaults, tabs, expand folder, full Chat rebuild, focus composer); folder ＋ deferred so UI fully opens |
+| **1.27.28** | **GUI freeze after deleting chat fixed:** context-menu actions deferred until grab releases; delete no longer full `show_page` rebuild (light reload); skip double rail refresh; toast avoids `update_idletasks` |
+| **1.27.27** | **Chat UI freeze while waiting on LLM fixed:** thread-safe UI queue (no Tk `after` from workers); throttle thinking/stream paints; light scroll (no `update_idletasks` during busy); debounce side-panel refresh; skip linkify + status thrash while busy; agent step notify throttled |
+| **1.27.26** | **Chat left rail folders + multi-select:** create/rename/delete folders; move chats into folders; expand/collapse folders; **checkboxes**, **Select all**, bulk **Move** / **Del**; context menu “Move to folder…”; new chat inside folder (＋ on folder row) |
+| **1.27.25** | **Chat right Setup panel:** expand/collapse drawer with collapsible sections — Connection, System prompt (library + save/reset), Model parameters (temp/ctx/stream), Tools & mode; thin ⚙ strip when collapsed; top-bar **Setup** toggle; width −/+; state persisted |
+| **1.27.24** | **Chat “hi” / DeepSeek Flash no-reply fix:** OpenRouter free tier rejected Action-mode prompts (~17k > ~3–8k tokens). Auto-retry once with compact system prompt (no native tool schemas); clearer 402 “prompt too large” message; MCP skips example/empty-key servers + 8s start timeout; busy Send shows Stop hint instead of silent no-op |
+| **1.27.23** | **Org AI never auto-changes model**; live status shows selected model + phase (stream/retry/error); errors explain timeout/404 without swapping model |
+| **1.27.22** | **Org AI uses Chat streaming path** first (deepseek/NVIDIA large non-stream JSON was 504/timeout while short chat streamed OK); still falls back non-stream + model chain |
+| **1.27.21** | **Org AI NVIDIA reliability:** log shows deepseek **504** + mistral-large **404**; auto **fallback models** (llama-3.1-8b…); tighter 90s timeout; smaller max_tokens on NVIDIA; saved default model `meta/llama-3.1-8b-instruct` |
+| **1.27.20** | **AI create UX:** **Save LLM settings** (provider/base/key/model persisted in config); always-visible footer **status + progress** while creating; elapsed timer + main status bar updates |
+| **1.27.19** | **Launch fix:** removed hide-until-ready (`withdraw` + alpha 0) that left the window permanently invisible; force-show + safety deiconify; Home build errors no longer block chrome |
+| **1.27.18** | **AI create reliability:** custom **seat count**; 240s timeout + auto-retry to 300s; background thread UI; force **system_prompt/worker_prompt** on every seat; Selection details show/edit prompts; **data/logs/org_ai.log** + `app_log` module; clearer timeout errors |
+| **1.27.17** | **Launch flicker reduced:** theme before window; withdraw/alpha-0 until UI built; single reveal (geometry + maximize + first page); deferred bg services / onboarding; drop double resize after() |
+| **1.27.16** | **Org panel Save always visible:** pinned footer Save/Config/Inspect/Remove; **Save selection** inside Selection details; AI create button labeled **Create & save organisation** |
+| **1.27.15** | **AI create LLM picker:** Provider (Default = global Settings) · Base URL · API key · Model list + ↻ refresh; empty fields use active Settings defaults |
+| **1.27.14** | **AI create org redesign:** asks **kind of organisation + tree requirements + size** (not only a goal); builds multi-level tree and fills each worker **system_prompt + worker_prompt**; quick-start chips |
+| **1.27.13** | **Org chart polish:** continuous tree connectors (stem + bus + ├/└ gutters); **no flicker on click** (soft selection, list highlight without rebuild, structure-only chart rebuild, debounced scrollregion) |
+| **1.27.12** | **Org chart view tools:** expand/collapse teams (▸/▾ + Expand/Collapse all); free **drag pan** (empty area / middle-mouse / Drag view mode); wheel scroll; bottom **Reset · CEO top + collapse teams** |
+| **1.27.11** | **All organisations list (right panel):** every created chart (e.g. test swat, beta org) with ☑ Select all, Open / Rename / Copy / New / Delete; active org highlighted; workers list remains below |
+| **1.27.10** | **Full organisation tree list:** every node listed with tree branches; **+ Add under each row**; × remove; orphan nodes included; taller list + node counts |
+| **1.27.9** | **Org right panel:** collapsible whole panel + expandable sections; full org chart **list with checkboxes**, Select all, bulk **Delete / Enable / Disable / Duplicate / + Child**; selection details kept under fold |
+| **1.27.8** | **Single window chrome:** removed duplicate in-app — □ ✕ bar; only the OS title-bar minimize / maximize / close remain (custom bar was a Batch‑1 layman strip that stacked on Windows) |
+| **1.27.7** | **Chat delete fixed:** rail no longer hides real chats still titled “New chat” (only true empty stubs); delete always drops file+index without re-adding; repair titles from first message; prune empty stubs so delete no longer looks like a no-op |
+| **1.27.6** | **ChatGPT/Grok-style chat UI:** calm rounded composer (＋ tools · input · model · ↑ send); Grok empty state + 2×2 starters; history ⋯ + right-click menus; wider message column; Live slim; canvas tokens closer to grok.com |
+| **1.27.5** | **Chat UI fix:** history rail right-click (open/pin/rename/branch/move/delete) + drag reorder; live panel no longer steals half width; wider Grok-like message column; rail fills height; jump-latest no longer blocks half the screen |
+| **1.27.4** | **Browser anti-bot:** Chrome `--headless=new` + stealth init; captcha/Cloudflare/anti-bot detection; **auto headless→headed** fallback with same profile; `wait_for_captcha` / `switch_headed` actions; Perchance mid-run headed recovery; chat emits headed-fallback status |
+| **1.27.3** | **Org chart GUI:** visual company tree (CEO top, branch columns, color cards, avatars); click no longer full-rebuilds (fixes flicker/slowness); native ▾ menu on every worker with full feature list (configure/goal/assignments/execution/reports/comms/duplicate/move/enable/remove/add) |
+| **1.27.2** | **Perchance browser image:** portable Chromium path fix (any build); iframe/frame targeting; `save_image` / network image capture; `<<<PERCHANCE_IMAGE>>>` chat tool; anti-bot detection + headed retry; WebGL soft flags |
+| **1.27.1** | **AI Org full pass:** worker **attachments** + OCR for non-vision models; model **capability badges**; **Import/Export** org (no secrets); **Move under…** reparent; **tool permissions**; orchestrator **runtime LLM trace** + explicit **fallback**; manager review + **comms log**; independent **verification** on conflicts; Team **Dashboard** + **Comms**; live org status during runs; revision history; expanded automated tests |
+| **1.27.0** | **AI Organisation upgrade (Company Structure):** hierarchical Team/Org chart with **+ Add AI Worker** at every layer; worker menus (configure / inspect / duplicate / remove with child promote); **Default vs override** LLM provider/model/base URL/key; system + worker prompts; assignment lifecycle + manager review; gap analysis + objective completeness in org pipeline; Team Members live hierarchy map; circular hierarchy protection; secret-safe export |
+| **1.26.2** | **PENDING #14–#15:** **Parallel agents** (`PARALLEL_AGENTS`) with concurrent/batch/time caps; **cwd lock** per chat sandbox |
+| **1.26.1** | **PENDING #12–#13:** Live panel **Artifacts** tab (images/files/diffs/reports); global **Ctrl+Shift+G** ask-about-clipboard |
+| **1.26.0** | **PENDING #10–#11:** **Version & updates** (About/Settings/check, VERSION stamp, portable build copy); **Prompt library** presets + save custom + bind to project |
+| **1.25.9** | **PENDING #9:** **Pause/Resume** on Chat (between tool/LLM passes) and Team banner; stop clears pause |
+| **1.25.8** | **PENDING #8:** **Diff view** for agent file edits (unified +/- colors); always-visible edit chips; View diff / Open file |
+| **1.25.7** | **PENDING #7:** Chat **📁 Folder** (index + scope RAG); citations as clickable `file://` links; open local sources from chat |
+| **1.25.6** | **PENDING #6:** Team **living plan** panel + step updates; **clean final answer** (strip FINAL:/tool logs); CEO synthesis fallback |
+| **1.25.5** | **PENDING #5:** Home **Quick start modes** — Research / Control PC / Code / Team (one-click tool flags + risk + open page) |
+| **1.25.4** | **PENDING #1–#4:** xAI Grok primary path hardened; **Test connection** with next-step errors; composer **token meter** (`~prompt+max tok`); **Risk tiers** chip (Read-only / Ask / Full) maps permission+sandbox+tool approval |
+| **1.25.3** | **Direct xAI Grok (not OpenRouter):** Use Grok defaults to `api.x.ai`; prompts for console.x.ai key; OpenRouter only as optional fallback; clearer 402 credit message |
+| **1.25.2** | **Grok routing fix (tested):** was calling `api.x.ai` with OpenRouter id `x-ai/grok-*` + `sk-or-` key → 400; auto-repair to OpenRouter; per-provider keys; skip test keys; stream max_tokens 512 to avoid OpenRouter 402 on low credits |
+| **1.25.1** | **Grok model fix:** stop selecting catalog ghost `x-ai/grok-4.5` (HTTP 400); probe-test candidates; prefer working `x-ai/grok-4.3` / `4.20` on OpenRouter |
+| **1.25.0** | **Use Grok as my AI (no CLI needed):** xAI Grok provider preset; one-click **✦ Use Grok** on Home + Chat + ⋯ menu; auto-picks OpenRouter `x-ai/grok-*` or direct `api.x.ai`; key prompt if missing |
+| **1.24.2** | **GUI Batch 3 (P2):** focus mode hides chat rail too; restore maximized; sidebar Quick footer group; alert badges for Approvals/Work; quiet bubble actions; composer Enter tip; title “rename”; quiet Imagine/Skills/Projects; Help “How to chat”; Models/Monitor Easy tips |
+| **1.24.1** | **GUI Batch 2 (P1):** quieter hub headers; pill chat tabs; Expert chips short (Act/Plan, T:man, Caps); thinking collapsed when done; Home step cards with accent + larger CTA; history **◀ Hide**; dynamic bubble wrap width; card radius tokens |
+| **1.24.0** | **GUI Batch 1 (P0):** slim window chrome (— □ ✕); short title; SuperGrok-like dark canvas/rail tokens; Easy chat top = Mode·Model·Live·⋯; stronger active nav + history highlight; dedupe empty New chat stubs; Live stays opt-in/slim |
+| **1.23.5** | **Chat scroll +50%:** mouse wheel / trackpad / PageUp·PageDown move farther per step |
+| **1.23.4** | **Larger chat input:** multi-line box (~96–160px, full width) with tools + Send under it — easy to type long messages |
+| **1.23.3** | **Bigger reply area:** slim one-row composer; Live panel no longer auto-opens (keeps replies full-width); narrower history rail; taller stream + message bubbles (up to ~window height); compact chrome by default |
+| **1.23.2** | **HTTP 524 / gateway errors:** never dump Cloudflare HTML into chat; friendly plain-English error bubble; auto-retry once on 524/502/503/504/timeout (stream → non-stream fallback) |
+| **1.23.1** | **One clean answer bubble:** tool steps no longer paint extra chat cards by default (use **Show tools** / Live panel); hide intermediate tool-round assistant bubbles; strip raw `<<<TOOL>>>` markup from the final reply |
+| **1.23.0** | **Live Grok layout (logged-in Chrome, no features removed):** in-chat **History rail** (New chat, Search, Imagine, Skills, Projects, history list, Pin, All chats; collapsible); composer matches Grok (**What's on your mind? / Ask anything…**, bottom bar Attach · Model · Mic · Send); empty state **Studio** + “What's on your mind?”; model menu synced in composer; all prior chips/modes/Live/overflow/tools kept |
+| **1.22.1** | **Closer to grok.com:** canvas `#141414`/`#fdfdfd`; Easy mode hides modes bar + coach; slim borderless top; empty state “Grok” wordmark; edge-to-edge message canvas |
+| **1.22.0** | **Grok-like Chat UI:** centered ~720px column; near-black canvas; empty state wordmark + pill starters; pill composer (round send ↑); softer user bubbles; dynamic side gutters from window width |
+| **1.21.4** | **Team UI thrash fix + version always visible:** progress no longer full-rebuilds feed every tick (soft refresh on new messages only); poll 3s; status/title/window bar always show `vX.Y.Z` |
+| **1.21.3** | **Team completion fixes:** strip raw tool blocks from answers; force final text after tools; CEO plain synthesize + fallback assemble from agents if CEO fails/timeouts |
+| **1.21.2** | **Team column drag-resize:** Excel-style vertical sashes between Goals | Chat | Members; widths saved in config |
+| **1.21.1** | **Team Clear chat:** feed toolbar **🗑 Clear chat** (keeps goal, clears messages + finished answer; blocked while team running) |
+| **1.21.0** | **Team agents use real tools:** coordinate + org pipeline run multi-round TERMINAL / WEB_SEARCH / WEB_FETCH loop (`team_agent_tools`) — no longer talk-only; tool log posted in message |
+| **1.20.10** | **Empty Team replies fix:** extract Qwen/local `reasoning_content` when `content` blank; team LLM empty → auto-retry; no blank bubbles (clear skip note); longer timeout/tokens for team agents |
+| **1.20.9** | **Team E2E verified** (live API): pipeline goal completed with final answer; agent auto-retry once on HTTP 524/502/timeout; manual test `python -m tests.manual_team_e2e` |
+| **1.20.8** | **Team goal manage + finish reliability:** Edit / Delete / Mark done / Fix stuck; repair status when final exists but stuck “running”; coordinate avoids same-agent loops & empty replies; force FINAL near max turns; re-run clears old final |
+| **1.20.7** | **Window drag-resize fix + Team chat-first:** drop `set_window_scaling` (broke edge drag); lower minsize 720×480; save geometry; maximize never goes true-fullscreen; Team **Chat only** / hide Goals & Members; taller composer; wrap width follows window |
+| **1.20.6** | **Team background runs:** leaving AI Team no longer kills the job — state lives on the app (`team_bg`); status bar shows progress on any page; return to AI Team reconnects feed; Stop still works from Team |
+| **1.20.5** | **Team chat boxes:** proper selectable messages (not dead labels) — **Copy**, **Expand/Smaller**, **Big** (maximize window), **clickable blue links**, Open/Copy links; toolbar **Copy all** + **Finished answer**; green final uses same controls |
+| **1.20.4** | **Team loop control:** New goal dialog has **Max turns** (3–20, default 6) for coordinate mode; roster shows turn N/max; tips for one-by-one vs discuss |
+| **1.20.3** | **Team live run fix:** progress was discarded (`on_progress=None`); pipeline only posted after all agents finished (looked hung); no Stop. Now: live feed posts per agent, progress banner, **Stop team** (should_stop), dialog closes when channel opens so user watches feed, soft poll every 2s |
+| **1.20.2** | **Layman self-explanatory UI:** plain-English empty chat (no Caps/Mode jargon); **Send message** button; fewer chat tools in Easy mode; Team labels (Your goals / Team members / Finished answer); New goal dialog without pipeline jargon; My AIs lists saved helpers + **hides expert train tools** until asked; Activity soft labels; wizard + Help/user guide rewritten for non-technical users |
+| **1.20.1** | **Layman UX:** always-visible step strip; **Create my AI** 4-step wizard (1 click finish); window **Minimize / Maximize / Restore / Close** bar; Home step 3 = wizard; Models easy-create banner |
+| **1.20.0** | **Simple UI overhaul:** default Simple mode — left menu only Home/Chat/Team/Models/Monitor; Home is 4 big steps with plain English; Chat hides tool switch clutter; Models/Team step guides; toggle Full menu anytime |
+| **1.19.1** | **Cloud create/train:** OpenAI Fine-tuning API (upload JSONL → SFT/DPO jobs → auto profile); teacher **distillation** via OpenRouter/OpenAI; Ollama Modelfile create; structure-methods catalog; A/B eval; list cloud FT jobs; honest OpenRouter = inference/teacher only |
+| **1.19.0** | **AI Factory pack:** Home **Cockpit** mission tiles; **Models** hub (profiles, Ollama pull/test, create LLM profile, dataset export, LoRA train lab + hyperparams); **Mission Control** monitor (CPU/GPU/RAM, tokens, train jobs, ops log); `model_profiles` / `train_lab` / `ops_monitor` / `mission_templates` |
+| **1.18.0** | **Teams-style multi-AI Team workspace:** sidebar **Team**; goal channels; agent message feed + roster presence; **pipeline** posts live; **coordinate** mode (agents turn-take until FINAL); New goal picks org chart + mode; data in `data/team_channels/` |
+| **1.17.0** | **Multi-org + AI create charts:** multiple named org charts (rename/copy/delete); Org page **✨ AI create** from goal; Chat **Org chart** picker + **✨ LLM creates org for goal**; pipeline uses selected graph; `org_ai` generate/validate/link agents |
+| **1.16.8** | **GUI scroll + sticky Save:** shared `page_layout` helper; Agents/Tasks list+scroll form + sticky Save/Delete bar; Schedule sticky Add bar + scroll list; Memory sticky Add + scroll list; Projects sticky Save; Ctrl+S page-aware (Agents/Tasks/Settings/Memory/Projects/Schedule) |
+| **1.16.7** | **One chat reply per turn:** hide intermediate tool-round assistant bubbles (e.g. “I'll open Chrome” + GUI + second “Chrome is open”); only final answer shows; tools stay in collapsed tool trace; re-apply on render for older chats |
+| **1.16.6** | Fix crash building Operator Manual: f-string treated `{"terminal":"Get-ChildItem"}` as format spec → `Invalid format specifier` (escape as `{{…}}`) |
+| **1.16.5** | **Dual tool path (both always work):** Action mode sends OpenAI `tools` schemas (`run_terminal`, `web_search`, …); native `tool_calls` + JSON/`<tool_call>` content auto-convert to text blocks via `ensure_executable_tool_format`; provider rejects tools → retry without tools; subagents use same path; prompts document both formats |
+| **1.16.4** | **Tool-call reliability:** models often emit JSON/`<tool_call>` instead of text blocks (training bias). Stronger prompts ban JSON tools; universal normalizer converts `<tool_call>`, hybrid `{"TERMINAL"}`, `{"queries":[…]}`, OpenAI name/args → `<<<TERMINAL>>>`/`<<<WEB_SEARCH>>>`; TERMINAL body is raw command (no `cmd:`); streaming tool_calls accumulated by index |
+| **1.16.3** | **Org pipeline: LLM plans flow first** — CEO planner picks which agents run and in what order from the org chart; unselected agents skipped; then sequential agent work + CEO synthesis; Thinking shows planned order |
+| **1.16.2** | **Chat scroll UX:** wheel always scrolls message list (Shift = scroll inside long text); no stacked handlers; PageUp/Down/Home/End; restore position on re-render; wider scrollbar; bottom spacer; centered ↓ Latest FAB |
+| **1.16.1** | **Single clean chat reply:** Org pipeline default OFF; remove fake sticky “Understood…” assistant bubble; hide intermediate tool-call assistants; org pipeline posts one CEO answer (agent detail in Thinking only) |
+| **1.16.0** | **Org pipeline switch (hard multi-agent):** Chat **Org pipeline** ON runs every org-tree agent (own LLM if set), blocks CEO until all done, evaluates agent + final outputs, posts CEO answer as Chat final reply; CEO Run plan uses org tree |
+| **1.15.3** | **Grok-style chat bubbles:** centered column, soft user pills, flat assistant (no heavy card), violet “G” avatar, ghost action chips, dual-mode colors, refined streaming bubble + canvas |
+| **1.15.2** | **Thinking UI:** collapsible live steps, **kept after final reply** in chat history; status shows step count. **Chat → Context…**: set context window + max response tokens; auto-fetch model max context/completion; Use model max buttons; chip on modes bar |
+| **1.15.1** | **Max LLM context:** default 128k window + 8k reply reserve; sticky Memory/goal/todos/plan; rolling chat summary when trim drops turns (extractive + optional LLM compress); smarter keep (sticky + first goal + recent); auto-memory facts; existing tools unchanged |
+| **1.15.0** | **Grok-style agent harness (GUI kept):** file read/write/search_replace/list_dir/grep; subagents (explore/plan/general); permissions allow/ask/deny; sandbox profiles; plan.md mode; AGENTS.md rules; hooks; bg shell tasks; git helpers; todos; ask_user; headless `studio_agent.py` |
+| **1.14.6** | Adult discovery **not limited to a site list**: open-web multi-angle search + Telegram (`t.me`) / Instagram / Discord / X / Reddit / Linktree fan-out; up to 40 hits; LLM instructed to find sources anywhere |
+| **1.14.5** | **Porn search always on:** Safe Search locked OFF; Settings cannot disable; LLM system prompt + internet playbook force adult tool use; full unfiltered hit packs (longer snippets/pages); parallel 18-tube fan-out; CSAM still hard-blocked |
+| **1.14.4** | Adult search (18+): Safe Search OFF default, adult mode, Reddit NSFW, site-scoped adult indexes; hard-block CSAM/minor queries |
+| **1.14.3** | Search defaults always **max volume**: 25 hits, auto-open 5 pages, rank for **18+ unique websites**; always merge free engines even with API |
+| **1.14.2** | **More parallel search:** +HN/SO/GitHub/Crossref/Mojeek/DDG-lite/Wiki-REST/Bing-News; 12 workers; up to 25 ranked hits; higher per-engine pull |
+| **1.14.1** | **Grok-style Thinking:** in-chat live step stream (sites searched, tools, browser, code/terminal); auto-open Live panel; richer tool progress lines |
+| **1.14.0** | **Deep internet:** `DEEP_RESEARCH`, `WEB_CRAWL`, `WEB_SCRAPE`, `WEB_DOWNLOAD`; research packs in `data/research/`; Settings crawl limits; expanded playbook |
+| **1.13.1** | Chat: **select text** + **click links** in replies (CTkLabel → selectable textboxes + URL open) |
+| **1.13.0** | **Web search overhaul:** parallel free engines (DDG/Bing/Brave/News/Wiki/SearX); relevance ranking + domain diversity; disk cache; multi-query expand; readability page extract; parallel page fetch; Chromium Bing fallback; LLM markdown report |
+| **1.12.1** | Fix OpenRouter/Llama **HTTP 400** “System message must be at the beginning” — only one leading system msg; context-trim note is user role |
+| **1.12.0** | **Full internet operator:** persistent Chromium session (click/fill/type/scroll/links/download); `WEB_FETCH` any URL/API; internet playbook in system prompt; Settings headed + cookie profile |
+| **1.11.1** | Settings: sticky **Save all settings** bar + scrollable page (Save was off-screen / easy to miss) |
+| **1.11.0** | **Web search upgrade (ChatGPT/Grok-style):** Tavily / Brave API / SerpAPI / Bing keys in Settings; free multi-backend fallback; **auto-open top pages** and return readable text; `fetch: N` in WEB_SEARCH; deep research workflow |
+| **1.10.2** | Internet search: detect DDG bot CAPTCHA; add Brave + Google News RSS backends; prefer non-Wiki results; media download Referer/File-page resolution + clearer fail text |
+| **1.10.1** | Deep user audit fixes: API-ready uses provider **or** config key (no false “No API key”); recover stuck Work “running” tasks on startup; safer activity log after close; broader unverified-claim patterns; tool roles in LLM history; clear SELF_IMPROVE format errors; chat finish guards |
+| **1.10.0** | UX Phase 1+2: PRIMARY/WORKSPACE/MORE nav; badges Work/Patches; Chat toolbar File/Search/Image/OCR/Browse; Caps descriptions; Mode ?; Feature directory; Settings sections + Test search; usage on composer status; Home health strip |
+| **1.9.6** | User-friendly UX: Help page (F2), Home checklist, Chat coach bar, richer empty-chat guide, improved setup wizard, page tips in status |
+| **1.9.5** | Full GUI contrast audit: remove plain `gray` labels; stronger muted/label tokens; Live textboxes high-contrast; org tree selection colors |
+| **1.9.4** | Page headers on Work/Approvals/Knowledge/Settings/…; markdown tables + nested lists; virtualized chat history (Load older / Show all) |
+| **1.9.3** | Deeper GUI: toasts, avatars, markdown lite (headings/code/bullets), centered chat column, token meta on bubbles, Live panel chrome, page header helper |
+| **1.9.2** | GUI polish: content bg, card home, sidebar icons + brand accent, focus mode (Ctrl+\\), status bar colors, composer Send primary, rounded chrome borders |
+| **1.9.1** | Web search hardened: DDG HTML + Wikipedia fallbacks; stop using Instant-Answer-only curl; clearer WEB_SEARCH instructions; filter ads |
+| **1.9.0** | **Trust pack:** provider capability matrix; image presets + Test image gen; unverified-claim detection; terminal kill on Stop; crash restore; SELF_IMPROVE→Patches by default; secret redaction on export; Work board; drafts; jump-to-latest; RAG citations + knowledge_health; unit tests |
+| **1.8.0** | GUI sprints: compact density + mode/tasks/caps chips; collapsible tool traces; sidebar hubs + Approvals badge; slash cmds + Ctrl+K + composer +; auto IMAGE_GEN fallback; onboarding wizard + UI scale + empty starters |
+| **1.7.8** | Full project **`docs/`** pack (blueprint, architecture, UI, data, tools, continuity); root README/FEATURES point to docs; self-improve allowlist includes `docs/` |
+| **1.7.7** | High-contrast chat chrome (tabs, menus, switches, segmented) via `themes.UI` styles |
+| **1.7.6** | IMAGE_GEN honesty — capability map fixed; ban SVG fakes; image-intent nudge |
+| **1.7.5** | Restore visible Plan/Action, Tasks manual/auto, Tool approval, capability switches on Chat |
+| **1.7.4** | Chat scroll / provider model UX polish |
+| **1.7.x** | Web search, OCR, schedule, clipboard/folder watch, continuous voice, patch review, multi-tabs, stop, RAG hybrid, portable browser, self-improve, streaming, mic, image gen, budgets, Grok-style declutter |
+
+---
+
+## 1.6.x — Stage C
+
+Stage C checklist items (Knowledge, browser, self-improve continuity, etc.). See parent `Checklist/12_Stage_C_v1.6_Checklist.md`.
+
+---
+
+## 0.9 – 1.x foundation
+
+| Version | Notes |
+|---------|--------|
+| 0.9.0 | Workflow graph tree · chat follows graph · run via workflow |
+| 0.8.0 | Multi-chat · memory · projects · Company + CEO · approval auto/manual · background agents |
+| 0.7.0 | System prompt editor · laptop GUI tools |
+| 0.6.0 | Operator manual · plan/action · skill toggles · MCP marketplace · Grok parity honesty |
+| 0.5.0 | Unrestricted defaults · skills catalog · MCP stdio |
+| 0.4.0 | Attachments + terminal for LLM |
+| 0.3.0 | Chat page |
+| 0.2.0 | Launch path-space fix · LLM pipeline · portable dist |
+| 0.1.0 | First GUI shell + Launch.bat |
+
+---
+
+## Doc maintenance
+
+When bumping `app/version.py`, add a row here and update [docs/README.md](README.md) version line + [CONTINUITY.md](CONTINUITY.md) Resume.
