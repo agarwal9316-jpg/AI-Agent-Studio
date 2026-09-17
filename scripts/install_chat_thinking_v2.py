@@ -7,7 +7,8 @@ ROOT = Path(__file__).resolve().parents[1]
 PAYLOAD = Path(__file__).resolve().parent / "refactor_payload"
 OUT = ROOT / 'app/ui/components/chat_thinking.py'
 def main() -> None:
-    parts = sorted(PAYLOAD.glob("chat_thinking_v2.z*.b64"))
+    # Only zero-padded zNN (exclude legacy z0/z1 single-digit leftovers)
+    parts = sorted(p for p in PAYLOAD.glob("chat_thinking_v2.z*.b64") if re.search(r"\.z\d{2}\.b64$", p.name))
     if not parts:
         raise SystemExit(f"No payload chunks in {PAYLOAD}")
     b64 = "".join(re.sub(r"\s+", "", p.read_text(encoding="ascii")) for p in parts)
