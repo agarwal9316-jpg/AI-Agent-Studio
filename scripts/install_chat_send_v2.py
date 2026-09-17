@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Install chat_thinking from verified zlib+base64 payload chunks (v2)."""
+"""Install chat_send from verified zlib+base64 payload chunks (v2)."""
 from __future__ import annotations
 import base64, zlib
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PAYLOAD = Path(__file__).resolve().parent / "refactor_payload"
-OUT = ROOT / 'app/ui/components/chat_thinking.py'
+OUT = ROOT / 'app/ui/components/chat_send.py'
 def main() -> None:
-    parts = sorted(PAYLOAD.glob("chat_thinking_v2.z*.b64"))
+    parts = sorted(PAYLOAD.glob("chat_send_v2.z*.b64"))
     if not parts:
         raise SystemExit(f"No payload chunks in {PAYLOAD}")
     b64 = "".join(p.read_text(encoding="ascii").strip() for p in parts)
