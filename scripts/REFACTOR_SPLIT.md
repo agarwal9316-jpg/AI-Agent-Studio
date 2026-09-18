@@ -1,44 +1,28 @@
-# AppWindow god-class split
+# AppWindow god-class split (merged to main)
 
-Branch: `refactor/split-god-class`
+## Launch
 
-## Modules extracted
+Double-click **Launch.bat**. No extra steps.
 
-| Module | Path | Role |
-|--------|------|------|
-| chat_thinking | `app/ui/components/chat_thinking.py` | Thinking UI / stream bubbles |
-| chat_rail | `app/ui/components/chat_rail.py` | Chat rail / goal banner |
-| chat_send | `app/ui/components/chat_send.py` | Send / auto-continue |
-| chat_dialogs | `app/ui/components/chat_dialogs.py` | Chat dialogs / wizards |
-| chat_render | `app/ui/components/chat_render.py` | Message rendering |
-| chat_misc | `app/ui/components/chat_misc.py` | Misc chat helpers |
-| chat_page | `app/ui/pages/chat_page.py` | Chat page builder |
-| settings_page | `app/ui/pages/settings_page.py` | Settings page |
-| app_window | `app/ui/app_window.py` | Thin host (~4.5k lines) with lazy imports |
+On first run, the app auto-materializes extracted modules from verified payloads
+(`app/_ensure_refactor_modules.py`). Later runs skip that (~1ms check).
 
-## Materialize from payloads (if modules missing)
+## Modules
 
-```bash
-python scripts/install_all_refactor_v2.py
-```
+| Module | Path |
+|--------|------|
+| chat_thinking | `app/ui/components/chat_thinking.py` |
+| chat_rail | `app/ui/components/chat_rail.py` |
+| chat_send | `app/ui/components/chat_send.py` |
+| chat_dialogs | `app/ui/components/chat_dialogs.py` |
+| chat_render | `app/ui/components/chat_render.py` |
+| chat_misc | `app/ui/components/chat_misc.py` |
+| chat_page | `app/ui/pages/chat_page.py` |
+| settings_page | `app/ui/pages/settings_page.py` |
+| app_window (thin host) | `app/ui/app_window.py` |
 
-This prefers `fix_*_v2.py` (payload typo patches) when present, else `install_*_v2.py`.
-
-## Wiring
-
-`app_window.py` uses lazy imports, e.g.:
-
-- `from app.ui.components.chat_rail import build_chat_view_bar`
-- `from app.ui.components.chat_send import maybe_auto_continue_task`
-- `from app.ui.components.chat_dialogs import open_findings_window`
-- `from app.ui.pages.chat_page import ...`
-- `from app.ui.pages.settings_page import ...`
-
-## Verify
+## Manual materialize (optional)
 
 ```bash
-python -m py_compile app/ui/app_window.py \
-  app/ui/components/chat_*.py \
-  app/ui/pages/chat_page.py \
-  app/ui/pages/settings_page.py
+python -m app._ensure_refactor_modules
 ```
