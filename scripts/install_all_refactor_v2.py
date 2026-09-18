@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install all extracted refactor modules (v2 verified payloads)."""
+"""Install all extracted refactor modules (v2). Prefers fix_* scripts when present."""
 from __future__ import annotations
 import subprocess, sys
 from pathlib import Path
@@ -10,11 +10,13 @@ ORDER = [
 ]
 def main() -> int:
     for name in ORDER:
-        script = ROOT / "scripts" / f"install_{name}_v2.py"
+        fix = ROOT / "scripts" / f"fix_{name}_v2.py"
+        install = ROOT / "scripts" / f"install_{name}_v2.py"
+        script = fix if fix.exists() else install
         if not script.exists():
             print(f"MISSING {script}", file=sys.stderr)
             return 1
-        print(f"=== {name} ===")
+        print(f"=== {name} ({script.name}) ===")
         r = subprocess.run([sys.executable, str(script)], cwd=str(ROOT))
         if r.returncode != 0:
             return r.returncode
