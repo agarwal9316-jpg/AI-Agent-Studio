@@ -25,6 +25,8 @@ _TARGETS: list[tuple[str, str]] = [
     ("app/ui/pages/chat_page.py", "fix_chat_page_v2.py"),
     ("app/ui/pages/settings_page.py", "fix_settings_page_v2.py"),
     ("app/ui/app_window.py", "fix_app_window_v2.py"),
+    ("app/ui/pages/org_page_ai.py", "install_org_page_ai_v1.py"),
+    ("app/ui/pages/org_page.py", "install_org_page_v1.py"),
 ]
 
 _MIN_FULL_BYTES = 5000
@@ -39,12 +41,11 @@ def _is_stub(path: Path) -> bool:
         return True
     if size < _MIN_FULL_BYTES:
         return True
-    # Detect leftover bootstrap text
     try:
         head = path.read_text(encoding="utf-8", errors="ignore")[:200]
     except OSError:
         return True
-    if "Bootstrap" in head and "auto-materializes" in head:
+    if "Bootstrap" in head and ("auto-materializes" in head or "materializes" in head):
         return True
     return False
 
