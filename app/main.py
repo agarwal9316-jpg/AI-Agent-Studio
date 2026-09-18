@@ -56,6 +56,12 @@ def main() -> int:
     try:
         from app.paths import data_dir, app_root
         from app.core.services.data.storage import load_config
+        from app._ensure_refactor_modules import ensure_refactor_modules, needs_materialize
+
+        if splash is not None and needs_materialize():
+            splash.stage("Preparing interface modules…", 15)
+        ensure_refactor_modules(quiet=True)
+
         from app.ui.app_window import run_app
 
         if splash is not None:
