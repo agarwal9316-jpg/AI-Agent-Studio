@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Materialize refactor modules
+        run: python -m app._ensure_refactor_modules
+
+      - name: Compile critical UI modules
+        run: |
+          python -m py_compile \
+            app/main.py \
+            app/_ensure_refactor_modules.py \
+            app/ui/app_window.py \
+            app/ui/components/chat_thinking.py \
+            app/ui/components/chat_rail.py \
+            app/ui/components/chat_send.py \
+            app/ui/components/chat_dialogs.py \
+            app/ui/components/chat_render.py \
+            app/ui/components/chat_misc.py \
+            app/ui/pages/chat_page.py \
+            app/ui/pages/settings_page.py
+
+      - name: Compile large pages (syntax only)
+        run: |
+          python -m py_compile \
+            app/ui/pages/org_page.py \
+            app/ui/pages/team_page.py \
+            app/ui/pages/org_chart_view.py \
+            app/ui/pages/mgmt_pages.py \
+            app/ui/pages/models_page.py
+
+      - name: Run unit smoke tests
+        run: python -m unittest tests.test_refactor_smoke -v
