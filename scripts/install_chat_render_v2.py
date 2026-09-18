@@ -5,7 +5,7 @@ import base64, zlib, re
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PAYLOAD = Path(__file__).resolve().parent / "refactor_payload"
-OUT = ROOT / 'app/ui/components/chat_render.py'
+OUT = ROOT / "app/ui/components/chat_render.py"
 def main() -> None:
     parts = sorted(p for p in PAYLOAD.glob("chat_render_v2.z*.b64") if re.search(r"\.z\d{2}\.b64$", p.name))
     if not parts:
