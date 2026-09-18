@@ -1,14 +1,15 @@
-"""Bootstrap for settings_page — materializes full module from payload if needed."""
+"""Bootstrap — auto-materializes full module on first import/launch."""
 from __future__ import annotations
 
 from pathlib import Path
-import subprocess
 import sys
 
 _FILE = Path(__file__).resolve()
-_ROOT = _FILE.parents[3]
 
 if _FILE.stat().st_size < 5000:
-    script = _ROOT / "scripts" / "fix_settings_page_v2.py"
-    subprocess.check_call([sys.executable, str(script)], cwd=str(_ROOT))
+    _root = _FILE.parents[3]
+    if str(_root) not in sys.path:
+        sys.path.insert(0, str(_root))
+    from app._ensure_refactor_modules import ensure_refactor_modules
+    ensure_refactor_modules(quiet=True)
     exec(compile(_FILE.read_text(encoding="utf-8"), str(_FILE), "exec"), globals())
