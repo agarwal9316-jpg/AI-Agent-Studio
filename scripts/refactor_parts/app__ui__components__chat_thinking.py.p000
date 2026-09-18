@@ -1,0 +1,27 @@
+"""Chat thinking UI — extracted from AppWindow."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+import customtkinter as ctk
+
+if TYPE_CHECKING:
+    from app.ui.app_window import AppWindow
+
+
+def thinking_add_card(app, idx: int, *, collapse_others: bool = True) -> None:
+    lst = getattr(app, "thinking_list", None)
+    if lst is None:
+        return
+    steps = list(getattr(app, "_thinking_steps", None) or [])
+    if idx < 0 or idx >= len(steps):
+        return
+    if not hasattr(app, "_thinking_card_widgets") or app._thinking_card_widgets is None:
+        app._thinking_card_widgets = []
+    if idx < len(app._thinking_card_widgets):
+        app._thinking_update_card(idx)
+        return
+    from app.ui.themes import UI as _UI, style_chrome_button
+
+    title, cu
