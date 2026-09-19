@@ -1,24 +1,35 @@
 # Refactor progress — split large pages
 
-## Status (2026-09-19 — COMPLETE)
+## Status (2026-09-19 — post-merge improvements)
 
-All payload modules verified via commit SHA (decompress + match local):
+| Module | Status | Notes |
+|--------|--------|-------|
+| page_router.py | done | show_page builders extracted; lazy imports for heavy pages |
+| models_page / models_advanced | done | advanced panel extracted |
+| chats_page / mgmt_pages | done | memory/projects vs chats split |
+| team_page / team_dialogs | done | message card + goal dialog extracted |
+| org_chart_view / widgets | done | WorkerCard helpers extracted |
+| org_page / org_page_ai | done | AI callbacks extracted |
+| chat_* components | done | thinking/rail/send/dialogs/render/misc |
+| app_window.py | ~4500 | uses page_builders(); still large but functional |
+| ensure + Launch.bat | done | clone → Launch.bat auto-materializes |
 
-| Module | Chunks | Bytes | Status |
-|--------|--------|------:|--------|
-| team_page | z00–z15 | 52555 | **OK** |
-| team_dialogs | z00–z03 | 14733 | **OK** |
-| org_chart_widgets | z00–z05 | 13700 | **OK** |
-| org_chart_view | z00–z08 | 27945 | **OK** |
-| mgmt_pages | z00–z05 | 17625 | **OK** |
-| models_page | z00–z02 | 7350 | **OK** |
-| models_advanced | z00–z08 | 27356 | **OK** |
-| chats_page | z00–z06 | 19930 | **OK** |
+## Reliability (this pass)
 
-Prior: app_window, chat_*, settings, org_page, org_page_ai — already on branch.
+- `app/_ensure_refactor_modules.py` — clearer errors, `data/last_materialize.txt` health log, `materialize_status()` for diagnostics
+- `scripts/smoke_launch.py` — headless materialize + py_compile (Windows-safe)
+- CI — payload decompress integrity check + smoke_launch
+- `tests/test_refactor_smoke.py` — payload decompress tests
 
-## Launch.bat
-**Only action:** click Launch.bat → `ensure_refactor_modules()` materializes any stubs from payloads.
+## How to run
 
-## Next (optional)
-Windows smoke test, then merge `refactor/split-large-pages` → `main`.
+1. `git clone https://github.com/agarwal9316-jpg/AI-Agent-Studio.git`
+2. Double-click **Launch.bat** (or `python scripts/smoke_launch.py` for headless check)
+3. First run materializes stubs from `scripts/refactor_payload/*.b64` automatically
+
+## Optional later
+
+- Further thin `app_window.py` (window chrome / lifecycle helpers)
+- Service splits: `chat.py` (~2.8k), `web_search.py` (~2.4k)
+- Remove legacy single-digit payload leftovers (`*.z0.b64` …) once only `*_v2.zNN` / zero-padded sets are used
+- Lazy-import remaining heavy service modules on first use
