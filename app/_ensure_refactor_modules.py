@@ -17,7 +17,6 @@ from pathlib import Path
 _ROOT = Path(__file__).resolve().parents[1]
 
 _TARGETS: list[tuple[str, str]] = [
-    # (relative path under repo, installer script name under scripts/)
     ("app/ui/components/chat_thinking.py", "install_chat_thinking_v2.py"),
     ("app/ui/components/chat_rail.py", "install_chat_rail_v2.py"),
     ("app/ui/components/chat_send.py", "install_chat_send_v2.py"),
@@ -64,6 +63,21 @@ def needs_materialize() -> bool:
     return any(_is_stub(_ROOT / rel) for rel, _ in _TARGETS)
 
 
+def _ensure_task_watch() -> None:
+    """Restore task_watch.py if truncated/placeholder."""
+    path = _ROOT / "app/core/services/chat/task_watch.py"
+    try:
+        text = path.read_text(encoding="utf-8", errors="ignore") if path.is_file() else ""
+    except OSError:
+        text = ""
+    if path.is_file() and len(text) > 8000 and "PLACEHOLDER" not in text[:80]:
+        return
+    script = _ROOT / "scripts" / "install_task_watch_restore.py"
+    if not script.is_file():
+        return
+    subprocess.run([sys.executable, str(script)], cwd=str(_ROOT), check=False)
+
+
 def _write_health(status: str, details: str = "") -> None:
     """Write data/last_materialize.txt for About/Diagnostics and support."""
     try:
@@ -93,6 +107,7 @@ def _write_health(status: str, details: str = "") -> None:
 
 def ensure_refactor_modules(*, quiet: bool = True) -> None:
     """Materialize any missing/stub refactor modules. Safe to call every launch."""
+    _ensure_task_watch()
     if not needs_materialize():
         _write_health("ok", "no_materialize_needed")
         return
