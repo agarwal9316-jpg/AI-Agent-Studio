@@ -31,6 +31,8 @@ _TARGETS: list[tuple[str, str]] = [
     ("app/ui/pages/team_page.py", "install_team_page_v1.py"),
     ("app/ui/pages/org_chart_widgets.py", "install_org_chart_widgets_v1.py"),
     ("app/ui/pages/org_chart_view.py", "install_org_chart_view_v1.py"),
+    ("app/ui/pages/mgmt_pages.py", "install_mgmt_pages_v1.py"),
+    ("app/ui/pages/models_page.py", "install_models_page_v1.py"),
 ]
 
 _MIN_FULL_BYTES = 5000
