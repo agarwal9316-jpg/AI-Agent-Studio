@@ -1,32 +1,21 @@
-# Refactor progress — split AppWindow god class
+# Refactor progress — split large pages
 
-## Status
+## Status (2026-09-19)
 
-| Metric | Before | After (local) |
-|--------|--------|---------------|
-| `app/ui/app_window.py` lines | **20,438** | **~5,195** |
-| Reduction | | **~75%** |
+| Module | Lines (full) | Payload chunks | Installer | Stub + ensure | Remote |
+|--------|-------------|----------------|-----------|---------------|--------|
+| team_page | 1362 | z00–z15 (16) | install_team_page_v1.py | yes | done |
+| team_dialogs | 398 | z00–z03 (4) | install_team_dialogs_v1.py | yes | done |
+| org_chart_widgets | 428 | z00–z05 (6) | install_org_chart_widgets_v1.py | yes | done |
+| org_chart_view | 766 | z00–z08 (9) | install_org_chart_view_v1.py | yes | done |
+| mgmt_pages | 991 | z00–z11 (12) | install_mgmt_pages_v1.py | yes | done |
+| models_page | 884 | z00–z10 (11) | install_models_page_v1.py | yes | done |
 
-## Extracted modules
+## How Launch.bat works
+1. `app/main.py` calls `ensure_refactor_modules()`
+2. Any stub (<5KB or Bootstrap header) is materialized from `scripts/refactor_payload/*.b64`
+3. User only clicks Launch.bat — no manual install scripts needed
 
-### Pages (`app/ui/pages/`)
-home, help, about, knowledge, approvals, usage, agents, schedule, work_board,
-settings (~1600 lines), chat (~1200 lines), track, patches, tasks
-
-### Components (`app/ui/components/`)
-system_monitor, status_bar, navigation,
-chat_render, chat_dialogs, chat_rail, chat_send, chat_thinking, chat_misc,
-chat_voice, chat_panels, chat_cycle_bar, sidebar_build, window_lifecycle,
-page_helpers, artifacts_panel, command_palette, diff_viewer, settings_helpers
-
-## Remaining in AppWindow
-- `_init_ui` (~228 lines) — shell bootstrap
-- `show_page` (~146 lines) — router
-- Thin wrappers that delegate to extracted modules
-- Smaller methods still being moved
-
-## Next
-1. Push all module files to this branch
-2. Push thinned app_window.py
-3. Windows GUI smoke test
-4. Finish `_init_ui` / `show_page` extraction
+## Pending
+- None for large-page split of team/org_chart/mgmt/models
+- Optional: further sub-split of mgmt_pages (memory/projects/company/ceo) and models advanced panel
