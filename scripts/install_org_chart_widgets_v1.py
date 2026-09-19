@@ -3,7 +3,7 @@ from __future__ import annotations
 import base64, zlib
 from pathlib import Path
 _ROOT = Path(__file__).resolve().parents[1]
-_TARGET = _ROOT / "app" / "ui" / "pages" / "org_chart_widgets.py"
+_TARGET = _ROOT / "app/ui/pages/org_chart_widgets.py"
 _PAYLOAD = _ROOT / "scripts" / "refactor_payload"
 _PREFIX = "org_chart_widgets.z"
 def main() -> None:
