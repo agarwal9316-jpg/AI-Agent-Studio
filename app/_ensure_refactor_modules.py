@@ -1,8 +1,8 @@
 """Ensure refactor-split modules are materialized before the UI imports them.
 
 Called automatically from app.main on every launch. Fast no-op when modules
-are already present (size check). On first run after pull, decompresses
-verified payloads via scripts/install_*_v2.py / fix_*_v2.py.
+are already present (size check). On first run after clone/pull, decompresses
+verified payloads via scripts/install_* / fix_* .
 """
 from __future__ import annotations
 
@@ -27,6 +27,14 @@ _TARGETS: list[tuple[str, str]] = [
     ("app/ui/app_window.py", "fix_app_window_v2.py"),
     ("app/ui/pages/org_page_ai.py", "install_org_page_ai_v1.py"),
     ("app/ui/pages/org_page.py", "install_org_page_v1.py"),
+    ("app/ui/pages/team_dialogs.py", "install_team_dialogs_v1.py"),
+    ("app/ui/pages/team_page.py", "install_team_page_v1.py"),
+    ("app/ui/pages/org_chart_widgets.py", "install_org_chart_widgets_v1.py"),
+    ("app/ui/pages/org_chart_view.py", "install_org_chart_view_v1.py"),
+    ("app/ui/pages/mgmt_pages.py", "install_mgmt_pages_v1.py"),
+    ("app/ui/pages/models_page.py", "install_models_page_v1.py"),
+    ("app/ui/pages/models_advanced.py", "install_models_advanced_v1.py"),
+    ("app/ui/pages/chats_page.py", "install_chats_page_v1.py"),
 ]
 
 _MIN_FULL_BYTES = 5000
