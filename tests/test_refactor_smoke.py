@@ -19,6 +19,28 @@ MODULES = [
     "app/ui/pages/settings_page.py",
 ]
 
+LARGE_PAGES = [
+    "app/ui/pages/org_page.py",
+    "app/ui/pages/org_page_ai.py",
+    "app/ui/pages/team_page.py",
+    "app/ui/pages/team_dialogs.py",
+    "app/ui/pages/org_chart_view.py",
+    "app/ui/pages/org_chart_widgets.py",
+    "app/ui/pages/mgmt_pages.py",
+    "app/ui/pages/models_page.py",
+    "app/ui/pages/models_advanced.py",
+    "app/ui/pages/chats_page.py",
+    "app/ui/page_router.py",
+]
+
+SYMBOLS = {
+    "app/ui/pages/mgmt_pages.py": ["page_memory", "page_projects", "page_company", "page_ceo"],
+    "app/ui/pages/models_page.py": ["page_models"],
+    "app/ui/pages/models_advanced.py": ["_build_advanced_models"],
+    "app/ui/pages/chats_page.py": ["page_chats"],
+    "app/ui/page_router.py": ["page_builders"],
+}
+
 BANNED_ROOT = {
     "check_chat.py",
     "check_chat2.py",
@@ -62,6 +84,7 @@ class RefactorSmokeTests(unittest.TestCase):
         text = (ROOT / "app/ui/app_window.py").read_text(encoding="utf-8")
         self.assertIn("def run_app", text)
         self.assertIn("class AppWindow", text)
+        self.assertIn("page_builders", text)
 
     def test_no_temp_root_scripts(self) -> None:
         present = {p.name for p in ROOT.glob("*.py")}
@@ -69,18 +92,21 @@ class RefactorSmokeTests(unittest.TestCase):
         self.assertFalse(leftover, f"temp scripts still present: {leftover}")
 
     def test_large_pages_parse(self) -> None:
-        for rel in (
-            "app/ui/pages/org_page.py",
-            "app/ui/pages/team_page.py",
-            "app/ui/pages/org_chart_view.py",
-            "app/ui/pages/mgmt_pages.py",
-            "app/ui/pages/models_page.py",
-        ):
+        for rel in LARGE_PAGES:
             with self.subTest(rel=rel):
                 path = ROOT / rel
-                if not path.is_file():
-                    self.skipTest(f"missing {rel}")
-                ast.parse(path.read_text(encoding="utf-8"))
+                self.assertTrue(path.is_file(), f"missing {rel}")
+                text = path.read_text(encoding="utf-8")
+                self.assertNotIn("Bootstrap — auto-materializes", text[:120])
+                ast.parse(text)
+
+    def test_key_symbols_present(self) -> None:
+        for rel, names in SYMBOLS.items():
+            path = ROOT / rel
+            text = path.read_text(encoding="utf-8")
+            for name in names:
+                with self.subTest(rel=rel, name=name):
+                    self.assertIn(f"def {name}", text)
 
 
 if __name__ == "__main__":
