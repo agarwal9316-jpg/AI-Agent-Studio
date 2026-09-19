@@ -20,6 +20,9 @@ jobs:
       - name: Materialize refactor modules
         run: python -m app._ensure_refactor_modules
 
+      - name: Headless smoke (materialize + compile)
+        run: python scripts/smoke_launch.py
+
       - name: Compile critical UI modules
         run: |
           python -m py_compile \
@@ -49,6 +52,41 @@ jobs:
             app/ui/pages/models_page.py \
             app/ui/pages/models_advanced.py \
             app/ui/pages/chats_page.py
+
+      - name: Verify payload integrity (decompress)
+        run: |
+          python - <<'PY'
+          import base64, re, zlib, sys
+          from pathlib import Path
+          root = Path(".")
+          payload = root / "scripts" / "refactor_payload"
+          if not payload.is_dir():
+              print("No payload dir — skip")
+              sys.exit(0)
+          groups = {}
+          for p in sorted(payload.glob("*.b64")):
+              m = re.match(r"(.+)\.z\d+\.b64$", p.name)
+              if not m:
+                  continue
+              groups.setdefault(m.group(1), []).append(p)
+          failed = []
+          for prefix, parts in sorted(groups.items()):
+              padded = [x for x in parts if re.search(r"\.z\d{2}\.b64$", x.name)]
+              use = padded if padded else parts
+              try:
+                  b64 = "".join(re.sub(r"\s+", "", x.read_text(encoding="ascii")) for x in use)
+                  raw = zlib.decompress(base64.b64decode(b64))
+                  print(f"OK {prefix}: {len(use)} chunks → {len(raw)} bytes")
+              except Exception as e:
+                  failed.append(f"{prefix}: {e}")
+                  print(f"FAIL {prefix}: {e}")
+          if failed:
+              print("Payload integrity failures:")
+              for f in failed:
+                  print(" ", f)
+              sys.exit(1)
+          print(f"All {len(groups)} payload groups OK")
+          PY
 
       - name: Run unit smoke tests
         run: python -m unittest tests.test_refactor_smoke -v
