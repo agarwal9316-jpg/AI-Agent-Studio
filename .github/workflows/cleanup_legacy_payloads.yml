@@ -1,0 +1,47 @@
+name: Cleanup legacy payloads
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/cleanup_legacy_payloads.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Remove legacy single-digit / pre-v2 payload chunks
+        run: |
+          set -e
+          # Single-digit zN and non-v2 app_window.zNN
+          rm -f scripts/refactor_payload/app_window.z[0-9].b64
+          rm -f scripts/refactor_payload/app_window.z1[0-2].b64
+          rm -f scripts/refactor_payload/chat_dialogs.z[0-9].b64
+          rm -f scripts/refactor_payload/chat_misc.z[0-9].b64
+          rm -f scripts/refactor_payload/chat_page.z[0-9].b64
+          rm -f scripts/refactor_payload/chat_rail.z[0-9].b64
+          rm -f scripts/refactor_payload/chat_render.z[0-9].b64
+          rm -f scripts/refactor_payload/chat_send.z[0-9].b64
+          rm -f scripts/refactor_payload/chat_thinking.z[0-9].b64
+          rm -f scripts/refactor_payload/settings_page.z[0-9].b64
+          echo "Remaining payload files:"
+          ls scripts/refactor_payload | wc -l
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A scripts/refactor_payload
+          if git diff --staged --quiet; then
+            echo "No legacy files left to remove."
+            exit 0
+          fi
+          git commit -m "chore: remove all legacy single-digit refactor payloads"
+          git push
