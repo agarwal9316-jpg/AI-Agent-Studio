@@ -1,31 +1,38 @@
-# Refactor progress — split large pages
+# Refactor progress — COMPLETE
 
-## Status (2026-09-19 — service helpers + hygiene)
+**Status: 2026-09-19 — full complete on `main`**
 
-| Module | Status | Notes |
-|--------|--------|-------|
-| page_router.py | done | lazy imports for heavy pages |
-| models / chats / mgmt / team / org_chart | done | extracted |
-| chat_* UI components | done | thinking/rail/send/dialogs/render/misc |
-| **chat_display.py** | **NEW** | strip/hide tool markup helpers (from chat.py) |
-| **web_search_rank.py** | **NEW** | rank/dedupe/URL cleanup (from web_search.py) |
-| ensure + Launch.bat | done | clone → Launch.bat auto-materializes |
-| legacy single-digit payloads | cleaning | prefer `*_v2.zNN` / zero-padded only |
+## What you need to do
 
-## Reliability
+```text
+git clone https://github.com/agarwal9316-jpg/AI-Agent-Studio.git
+cd AI-Agent-Studio
+Launch.bat
+```
 
-- `data/last_materialize.txt` health log
-- `scripts/smoke_launch.py` headless check
-- CI: payload decompress integrity
+Optional headless check: `python scripts/smoke_launch.py`
 
-## How to run
+## Delivered
 
-1. `git clone https://github.com/agarwal9316-jpg/AI-Agent-Studio.git`
-2. Double-click **Launch.bat** (or `python scripts/smoke_launch.py`)
-3. First run materializes stubs automatically
+| Area | Status |
+|------|--------|
+| UI page splits (team, org, models, chats, mgmt, chat_*) | done |
+| `page_router.py` lazy builders | done |
+| `ensure_refactor_modules` + Launch.bat auto-materialize | done |
+| Health log `data/last_materialize.txt` | done |
+| `scripts/smoke_launch.py` | done |
+| CI: py_compile + payload decompress + unittest | done |
+| `chat_display.py` (tool-markup / history display helpers) | done |
+| `web_search_rank.py` (rank / dedupe / URL cleanup) | done |
+| Legacy single-digit payloads | removed via cleanup workflow |
 
-## Optional later
+## Architecture notes
 
-- Thin `app_window.py` further (~4500 lines)
-- Finish deleting remaining legacy `*.zN.b64` (single-digit) when v2 sets exist
-- Point `chat.py` / `web_search.py` fully at the new helper modules (re-export only)
+- First Launch materializes UI modules from `scripts/refactor_payload/*_v2.zNN.b64` (and zero-padded sets).
+- Display helpers live in `app/core/services/chat/chat_display.py` (also still available from `chat.py` for compatibility).
+- Ranking helpers live in `app/core/services/web/web_search_rank.py`.
+
+## Optional future work (not required for Launch)
+
+- Further thin `app_window.py` (~4500 lines) under GUI smoke tests
+- Point every import at `chat_display` / `web_search_rank` only (drop duplicate defs inside chat.py / web_search.py)
