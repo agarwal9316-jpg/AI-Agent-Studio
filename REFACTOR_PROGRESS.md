@@ -1,25 +1,22 @@
 # Refactor progress — split large pages
 
-## Status (2026-09-19 — round 2)
+## Status (2026-09-19 — complete push)
 
-| Module | Lines | Notes |
-|--------|------:|-------|
-| page_router.py | ~70 | **NEW** — show_page builders extracted |
-| models_page.py | ~204 | thinned; advanced panel extracted |
-| models_advanced.py | ~702 | **NEW** — profiles/Ollama/train lab |
-| chats_page.py | ~510 | **NEW** — extracted from mgmt_pages |
-| mgmt_pages.py | ~505 | memory/projects/company/ceo/workflow only |
-| app_window.py | ~4500 | uses page_builders(); still large |
-| team/org_chart | done | prior turn |
-
-## Tests / CI
-- `tests/test_refactor_smoke.py` covers all ensure targets + new modules + key symbols
-- CI runs on `main` and `refactor/**`; materialize + py_compile + unittest
+| Module | Payload chunks | Installer | Remote decompress |
+|--------|----------------|-----------|-------------------|
+| team_page | z00–z15 | install_team_page_v1.py | needs integrity pass |
+| team_dialogs | z00–z03 | install_team_dialogs_v1.py | needs integrity pass |
+| org_chart_widgets | z00–z05 | install_org_chart_widgets_v1.py | **OK** |
+| org_chart_view | z00–z08 | install_org_chart_view_v1.py | **OK** |
+| mgmt_pages | z00–z05 | install_mgmt_pages_v1.py | **OK** |
+| models_page | z00–z02 | install_models_page_v1.py | **OK** |
+| models_advanced | z00–z08 | install_models_advanced_v1.py | needs integrity pass |
+| chats_page | z00–z06 | install_chats_page_v1.py | **OK** |
+| page_router / chats extract | prior | — | done |
+| app_window / chat_* | prior | — | done |
 
 ## Launch.bat
-Still only: click Launch.bat → ensure materializes stubs.
+Click **Launch.bat** only. `ensure_refactor_modules()` runs installers for any stub modules.
 
-## Still optional later
-- Further chat_* splits (misc/render still 1.8k–2.2k)
-- Service-layer splits (chat.py, web_search.py)
-- Merge branch to main after Windows smoke
+## Next (optional integrity)
+Re-push team_page, team_dialogs, models_advanced last-chunk content if materialize fails; otherwise merge to main after Windows smoke.
