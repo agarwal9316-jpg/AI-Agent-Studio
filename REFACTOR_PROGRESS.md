@@ -1,21 +1,25 @@
 # Refactor progress — split large pages
 
-## Status (2026-09-19)
+## Status (2026-09-19 — round 2)
 
-| Module | Lines (full) | Payload chunks | Installer | Stub + ensure | Remote |
-|--------|-------------|----------------|-----------|---------------|--------|
-| team_page | 1362 | z00–z15 (16) | install_team_page_v1.py | yes | done |
-| team_dialogs | 398 | z00–z03 (4) | install_team_dialogs_v1.py | yes | done |
-| org_chart_widgets | 428 | z00–z05 (6) | install_org_chart_widgets_v1.py | yes | done |
-| org_chart_view | 766 | z00–z08 (9) | install_org_chart_view_v1.py | yes | done |
-| mgmt_pages | 991 | z00–z11 (12) | install_mgmt_pages_v1.py | yes | done |
-| models_page | 884 | z00–z10 (11) | install_models_page_v1.py | yes | done |
+| Module | Lines | Notes |
+|--------|------:|-------|
+| page_router.py | ~70 | **NEW** — show_page builders extracted |
+| models_page.py | ~204 | thinned; advanced panel extracted |
+| models_advanced.py | ~702 | **NEW** — profiles/Ollama/train lab |
+| chats_page.py | ~510 | **NEW** — extracted from mgmt_pages |
+| mgmt_pages.py | ~505 | memory/projects/company/ceo/workflow only |
+| app_window.py | ~4500 | uses page_builders(); still large |
+| team/org_chart | done | prior turn |
 
-## How Launch.bat works
-1. `app/main.py` calls `ensure_refactor_modules()`
-2. Any stub (<5KB or Bootstrap header) is materialized from `scripts/refactor_payload/*.b64`
-3. User only clicks Launch.bat — no manual install scripts needed
+## Tests / CI
+- `tests/test_refactor_smoke.py` covers all ensure targets + new modules + key symbols
+- CI runs on `main` and `refactor/**`; materialize + py_compile + unittest
 
-## Pending
-- None for large-page split of team/org_chart/mgmt/models
-- Optional: further sub-split of mgmt_pages (memory/projects/company/ceo) and models advanced panel
+## Launch.bat
+Still only: click Launch.bat → ensure materializes stubs.
+
+## Still optional later
+- Further chat_* splits (misc/render still 1.8k–2.2k)
+- Service-layer splits (chat.py, web_search.py)
+- Merge branch to main after Windows smoke
