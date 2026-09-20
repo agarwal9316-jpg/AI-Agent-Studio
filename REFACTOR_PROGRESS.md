@@ -1,8 +1,6 @@
-# Refactor progress — COMPLETE
+# AI Agent Studio — ready on main
 
-**Status: 2026-09-19 — full complete on `main`**
-
-## What you need to do
+## User steps (only these)
 
 ```text
 git clone https://github.com/agarwal9316-jpg/AI-Agent-Studio.git
@@ -10,29 +8,22 @@ cd AI-Agent-Studio
 Launch.bat
 ```
 
-Optional headless check: `python scripts/smoke_launch.py`
+That is everything. First launch materializes UI modules and restores any truncated helpers automatically.
 
-## Delivered
+## What Launch.bat does for you
 
-| Area | Status |
-|------|--------|
-| UI page splits (team, org, models, chats, mgmt, chat_*) | done |
-| `page_router.py` lazy builders | done |
-| `ensure_refactor_modules` + Launch.bat auto-materialize | done |
-| Health log `data/last_materialize.txt` | done |
-| `scripts/smoke_launch.py` | done |
-| CI: py_compile + payload decompress + unittest | done |
-| `chat_display.py` (tool-markup / history display helpers) | done |
-| `web_search_rank.py` (rank / dedupe / URL cleanup) | done |
-| Legacy single-digit payloads | removed via cleanup workflow |
+1. Creates `.venv` if needed  
+2. Runs `ensure_refactor_modules()`  
+3. Restores full `task_watch.py` if needed  
+4. Decompresses UI payloads into full modules  
+5. Starts the app  
 
-## Architecture notes
+No manual install scripts. No payload cleanup. No extra pulls.
 
-- First Launch materializes UI modules from `scripts/refactor_payload/*_v2.zNN.b64` (and zero-padded sets).
-- Display helpers live in `app/core/services/chat/chat_display.py` (also still available from `chat.py` for compatibility).
-- Ranking helpers live in `app/core/services/web/web_search_rank.py`.
+## Optional (developers only)
 
-## Optional future work (not required for Launch)
+```text
+python scripts/smoke_launch.py
+```
 
-- Further thin `app_window.py` (~4500 lines) under GUI smoke tests
-- Point every import at `chat_display` / `web_search_rank` only (drop duplicate defs inside chat.py / web_search.py)
+Headless materialize + compile check — not required to use the app.
