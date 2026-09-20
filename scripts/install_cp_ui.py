@@ -10,16 +10,16 @@ PREFIX = "cp_ui"
 
 def _load_b64() -> str:
     texts = []
-    # Prefer full z00/z01/z02 if valid
-    for i in range(10):
-        p = PAYLOAD / f"{PREFIX}.z{i:02d}.b64"
+    for i in range(20):
         a = PAYLOAD / f"{PREFIX}.z{i:02d}a.b64"
         b = PAYLOAD / f"{PREFIX}.z{i:02d}b.b64"
+        p = PAYLOAD / f"{PREFIX}.z{i:02d}.b64"
         if a.exists():
             t = a.read_text(encoding="utf-8").strip()
             if b.exists():
                 t += b.read_text(encoding="utf-8").strip()
-            texts.append(t)
+            if t and not t.startswith("PLACEHOLDER"):
+                texts.append(t)
         elif p.exists():
             t = p.read_text(encoding="utf-8").strip()
             if t.startswith("PLACEHOLDER") or len(t) < 100:
@@ -32,10 +32,14 @@ def main() -> None:
     if not b64:
         print("No cp_ui payload chunks found")
         return
+    pad = (4 - len(b64) % 4) % 4
+    b64 += "=" * pad
     raw = zlib.decompress(base64.b64decode(b64))
     header, body = raw.split(b"\n--\n", 1)
     offset = 0
     for line in header.decode().splitlines():
+        if not line.strip() or "|" not in line:
+            continue
         path_s, size_s = line.split("|", 1)
         size = int(size_s)
         data = body[offset : offset + size]
