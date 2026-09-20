@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+import base64, zlib
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+B64 = (
+    "eNrdfdty21iS4Du/AgNPjQEVRVHyZTzsZk+4XJ5uz1SVHbZqOnrUDBoiQAktEkADoCWNihv1tBH7"
+    "ujH7sBP7sLsRO7+w7/sp9SWbmed+cACSkux2VUW3BQLnfvLkPfNERXEwy8vkoErKD+ksqeBXVpf5"
+    "Ylosogxe1/BxUFz/cHg4fPKsF20qzl5jhaPDZ4/+liqs0oMiOrPLTvEdFnz0+HD4dGPLURwVdVJW"
+    "NJbh3w2PNtZY5nGyoPKPjp4cbiw+naZZWk+nWOHJ083Nv335/OtvXw6W8Q+Hj2H8+/s93/f/8d3r"
+    "77wChplWdZLNEm+elx6v51E9L8nqtE6Tygtm+bKIMnjse7AUWQ1/66i6gD/lKsOXszr9kNbX8FQU"
+    "Zf4hWlThADrpzct86U2n81W9KpPp1EuXRV7WXpRleR3VaZ5VvR5/96cqz8RzXomn+rxMojjNzsSL"
+    "1SqNWbNxVCd1ukxEo+I3jA3+/dc8S1i5IqrPF+mpKPYGfrIP9XUBDYv3z7PrXm+6yGcX3lh1O3j7"
+    "DbwJwl4vTubeNMsvp2mVB6G3/xuvqstRz4P/ygSml8kBDKBUIMYwWNWzcABF5/gm8L/4w/4Xy/0v"
+    "4uMvfjf64tvRF+/+xYfGeesJtB4HRZnM06sRtg9D8X2zsxW8w0UY4D+Pg3BwnlydjA6PJvpQ5v4N"
+    "a2V9s1r7Xjr32E8P4CzxVqJDGHE0LfO8ZhPCpWGdPPDeQPmkhGr5n5IZLW504GXJFWxJjrv8K28e"
+    "LRbeaQTrBW9mlzFVnEVZnOJCVDDME3qF/2HLAygD/Rx4Pjbm44MBp37fKB4A2KQLAJpwUCZVvviQ"
+    "wFyLqETwO3k82bqdwXkO6079DqJ0n+B3v6pXcZq31mVrSSfCSzNtUiPZdF1eqx8088HyIk7LgA9x"
+    "fFyuABSTKzhf0/yCfoZGBb5VM/kyuZolRe29fveyLPPSah1GmWarhF4WsLZbrSgrve3A+IAKAR14"
+    "cIIsWiYEihaE8MIGCB0g3GGF9QBPsy8aWuRRbDW0gN5P4nRWn8CbPh6+yWQkJ6e6ZiMD+AWEATOh"
+    "UVdBqBaHj+OEbZmxK5dpfe7lRZIFRd/zSx8mnc1yPNVjf1XP95/ByYoqb26uNE4IhoATGNDA56Hd"
+    "GRWBMaVVmlV1BNgzwFd9mlXIzhgfEN/TgG9qn7WLyPfrBMaS0FvndPjaVREAvly7vpfWybIaOdeP"
+    "FvY7wDntC1kv8W0xwKWZVqs5oITAH8Bbn31XSwbvYNEut1g0"
