@@ -1,0 +1,22 @@
+n3/CjbsDRA6VJ1I"
+    "3A7k8rrCoV/UeQEwznREuH8ha4DafrGIVnEChw/+OaA/V/h3VVZAuCqAJCNIPED0IGEMwYSADEOj"
+    "WYj0ebLkrf92GaWLgxcRuh5HJaKJLJnhekpcdZ3UrOgSNindr0E6wWQGK2gEiMeMLveECa9icq7t"
+    "9Y7Pc+h9FmXeKaxqHBMygu1ExAT46xr9+ImSEtHi8LLP4AXIz6D3/wEUBCW7"
+)
+
+def main():
+    raw = zlib.decompress(base64.b64decode(B64))
+    header, body = raw.split(b"\n--\n", 1)
+    off = 0
+    for line in header.decode().splitlines():
+        path_s, size_s = line.split("|", 1)
+        size = int(size_s)
+        data = body[off:off+size]
+        off += size
+        dest = ROOT / path_s
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(data)
+        print("wrote", dest, len(data))
+    print("done")
+if __name__ == "__main__":
+    main()
