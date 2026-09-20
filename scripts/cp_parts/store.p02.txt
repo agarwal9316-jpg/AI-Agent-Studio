@@ -1,0 +1,76 @@
+action: str,
+    entity_type: str = "",
+    entity_id: str = "",
+    details: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    with _lock:
+        items = _load("activity")
+        entry = {
+            "id": _new_id("act_"),
+            "company_id": company_id,
+            "actor": actor,
+            "action": action,
+            "entity_type": entity_type,
+            "entity_id": entity_id,
+            "details": dict(details or {}),
+            "at": _now_iso(),
+        }
+        items.append(entry)
+        if len(items) > 2000:
+            items = items[-2000:]
+        _save("activity", items)
+        return entry
+
+
+def list_activity(company_id: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
+    with _lock:
+        items = _load("activity")
+        if company_id:
+            items = [a for a in items if a.get("company_id") == company_id]
+        items = sorted(items, key=lambda a: a.get("at") or "", reverse=True)
+        return list(items[: max(1, limit)])
+
+
+# ── Approvals (governance gates) ───────────────────────────────────────────
+
+def list_approvals(
+    company_id: str | None = None,
+    status: str | None = "pending",
+) -> list[dict[str, Any]]:
+    with _lock:
+        items = _load("approvals")
+        if company_id:
+            items = [a for a in items if a.get("company_id") == company_id]
+        if status:
+            items = [a for a in items if a.get("status") == status]
+        return list(items)
+
+
+def get_approval(approval_id: str) -> dict[str, Any] | None:
+    with _lock:
+        for a in _load("approvals"):
+            if a.get("id") == approval_id:
+                return dict(a)
+    return None
+
+
+def upsert_approval(approval: dict[str, Any]) -> dict[str, Any]:
+    with _lock:
+        items = _load("approvals")
+        aid = approval.get("id") or _new_id("ap_")
+        approval = dict(approval)
+        approval["id"] = aid
+        now = _now_iso()
+        if not approval.get("created_at"):
+            approval["created_at"] = now
+        approval["updated_at"] = now
+        found = False
+        for i, a in enumerate(items):
+            if a.get("id") == aid:
+                items[i] = approval
+                found = True
+                break
+        if not found:
+            items.append(approval)
+        _save("approvals", items)
+        return dict(approval)
