@@ -1,0 +1,34 @@
+Lcd6iS3aXws3XsxT7O0"
+    "Ond+ahNhuPhibLaZs8luyRaSSWRR8kiaVaSNtyQWhEfgFEmrxLn8Qa/3wpRqyOUaY/RggUMjTo5v"
+    "CeDFPuZH5GlVWGhI1e8xClH1yX1MSy7mqQC/c1J9VGQtljF3AZdthIMROgj2e1zC6HsovIbkTlRh"
+    "ukhKx4FCppztSB9k3wMu/GHtoeyBvo/Iw/BYQQwMXJ0u0hn6hCJQtvjj8jWbsvUQIXLsK3Y8Qxlo"
+    "VgxgIijX8WA/yaOH7KuRe0eCMv+I0V6KJlVB2NtJXtxtzL3edBotFtAg3qLDX/oTEDFftMmzAn5A"
+    "CmGb89OP/73y9vYMcNrb85Yp6UDUXlA52Lp4xXwDSBom3RtqCmd5cQ3nqAeydIqeEXFy8DaJqGSc"
+    "oHOmF3z76hiw5SK/ROUbBlkCWt1L4ySq9kikLZMUrVSIHwG8AVreXEPbGUZ9PqAJUY+93g9qTMDK"
+    "cghb5uhU6/3Q+2Ff/ac/sxdQWcRV/OC95wsm7nHhe/keRNb3bgh4jx3wQ/YlHRSWTxLaUje5U32Z"
+    "bJtVoaz2XzKKQRcqQA3t9pj3XoDEBc7he0mD3odUU95AiVWMOzipHwvcWG9f0XGlCgkAUzxF5i2m"
+    "8pzXyy/4VLgmAoqKQzuwwjlhbO9NZvR933vPzzA+ogaAD1aG3h+wpITQrBHATUOQeRDpVxxV53Rr"
+    "OA4INxq1M70eWa1WWQxje4+a4wPjGBy8F5p/wlgmtqKu+zJancPP9+hE2uu9f/++ILDq3R5F9GY5"
+    "y7/Siiasu4FmuciizO7/wZCZBPUBhHYTeAknze8bFwD5P/34Hz61ZGMU0VqI/MlldAFQE68SkeOb"
+    "ci5j5LxcWFUhxOnTavweEDF68ewB/tnzIm++Wiy0YzVboGtSbx8OsseO8WVy6n3/CjbsDRA6VJ1I"
+    "3A7k8rrCoV/UeQEwznREuH8ha4DafrGIVnEChw/+OaA/V/h3VVZAuCqAJCNIPED0IGEMwYSADEOj"
+    "WYj0ebLkrf92GaWLgxcRuh5HJaKJLJnhekpcdZ3UrOgSNindr0E6wWQGK2gEiMeMLveECa9icq7t"
+    "9Y7Pc+h9FmXeKaxqHBMygu1ExAT46xr9+ImSEtHi8LLP4AXIz6D3/wEUBCW7"
+)
+
+def main():
+    raw = zlib.decompress(base64.b64decode(B64))
+    header, body = raw.split(b"\n--\n", 1)
+    off = 0
+    for line in header.decode().splitlines():
+        path_s, size_s = line.split("|", 1)
+        size = int(size_s)
+        data = body[off:off+size]
+        off += size
+        dest = ROOT / path_s
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(data)
+        print("wrote", dest, len(data))
+    print("done")
+if __name__ == "__main__":
+    main()
