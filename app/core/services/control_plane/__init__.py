@@ -1,8 +1,7 @@
 """Paperclip-inspired control plane for AI Agent Studio.
 
-Control plane (this package) orchestrates companies, org agents, tasks,
-budgets, and heartbeats. Execution happens via adapters (Studio builtin chat,
-process, HTTP) — same split as Paperclip: orchestrate, don't mandate one runtime.
+Control plane orchestrates companies, org agents, tasks, budgets, heartbeats,
+approvals, and adapters. Execution happens via adapters — same split as Paperclip.
 
 Public API:
   from app.core.services.control_plane import service as cp
