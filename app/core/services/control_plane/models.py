@@ -1,127 +1,76 @@
-"""Data shapes for the control plane (Paperclip-aligned concepts)."""
+"""Data models for the control plane (JSON-serializable dicts)."""
 from __future__ import annotations
 
-from typing import Any
-
-ADAPTER_TYPES = (
-    "studio_builtin",
-    "process",
-    "http",
-)
-
-AGENT_STATUSES = ("idle", "running", "paused", "error", "budget_exceeded")
-TASK_STATUSES = (
-    "backlog",
-    "todo",
-    "in_progress",
-    "blocked",
-    "in_review",
-    "done",
-    "cancelled",
-)
-COMPANY_STATUSES = ("active", "paused", "archived")
-APPROVAL_TYPES = ("hire_agent", "strategy", "budget_override", "other")
-APPROVAL_STATUSES = ("pending", "approved", "rejected")
+from typing import Any, TypedDict
 
 
-def empty_company(
-    *,
-    name: str = "AI Company",
-    goal: str = "",
-    budget_monthly_cents: int = 0,
-) -> dict[str, Any]:
-    return {
-        "id": "",
-        "name": name,
-        "goal": goal,
-        "status": "active",
-        "budget_monthly_cents": int(budget_monthly_cents or 0),
-        "spent_monthly_cents": 0,
-        "require_approval": True,
-        "created_at": "",
-        "updated_at": "",
-    }
+class Company(TypedDict, total=False):
+    id: str
+    name: str
+    goal: str
+    status: str  # active | paused | archived
+    budget_monthly_cents: int
+    spent_monthly_cents: int
+    require_approval: bool
+    created_at: str
+    updated_at: str
 
 
-def empty_agent(
-    *,
-    company_id: str,
-    name: str,
-    title: str = "",
-    role: str = "worker",
-    reports_to: str = "",
-    adapter_type: str = "studio_builtin",
-    adapter_config: dict[str, Any] | None = None,
-    budget_monthly_cents: int = 0,
-    heartbeat_interval_sec: int = 300,
-    capabilities: str = "",
-) -> dict[str, Any]:
-    return {
-        "id": "",
-        "company_id": company_id,
-        "name": name,
-        "title": title or name,
-        "role": role,
-        "reports_to": reports_to or "",
-        "status": "idle",
-        "adapter_type": adapter_type if adapter_type in ADAPTER_TYPES else "studio_builtin",
-        "adapter_config": dict(adapter_config or {}),
-        "budget_monthly_cents": int(budget_monthly_cents or 0),
-        "spent_monthly_cents": 0,
-        "heartbeat_enabled": True,
-        "heartbeat_interval_sec": max(30, int(heartbeat_interval_sec or 300)),
-        "last_heartbeat_at": "",
-        "capabilities": capabilities or "",
-        "created_at": "",
-        "updated_at": "",
-    }
+class Agent(TypedDict, total=False):
+    id: str
+    company_id: str
+    name: str
+    title: str
+    role: str  # worker | manager | board
+    reports_to: str
+    status: str  # active | paused | terminated
+    adapter_type: str  # studio_builtin | process | http
+    adapter_config: dict[str, Any]
+    budget_monthly_cents: int
+    spent_monthly_cents: int
+    heartbeat_interval_sec: int
+    last_heartbeat_at: str
+    capabilities: str
+    require_approval: bool
+    created_at: str
+    updated_at: str
 
 
-def empty_task(
-    *,
-    company_id: str,
-    title: str,
-    description: str = "",
-    assignee_id: str = "",
-    parent_id: str = "",
-    priority: int = 3,
-) -> dict[str, Any]:
-    return {
-        "id": "",
-        "company_id": company_id,
-        "title": title,
-        "description": description or "",
-        "status": "todo",
-        "assignee_id": assignee_id or "",
-        "parent_id": parent_id or "",
-        "priority": int(priority),
-        "goal_path": [],
-        "checkout_by": "",
-        "blockers": [],
-        "comments": [],
-        "created_at": "",
-        "updated_at": "",
-    }
+class Task(TypedDict, total=False):
+    id: str
+    company_id: str
+    agent_id: str
+    title: str
+    description: str
+    status: str  # backlog | ready | in_progress | blocked | done | cancelled
+    priority: int
+    blockers: list[str]
+    comments: list[dict[str, Any]]
+    created_at: str
+    updated_at: str
 
 
-def empty_run(
-    *,
-    company_id: str,
-    agent_id: str,
-    task_id: str = "",
-    adapter_type: str = "",
-) -> dict[str, Any]:
-    return {
-        "id": "",
-        "company_id": company_id,
-        "agent_id": agent_id,
-        "task_id": task_id or "",
-        "adapter_type": adapter_type or "",
-        "status": "running",
-        "started_at": "",
-        "finished_at": "",
-        "cost_cents": 0,
-        "log": [],
-        "result_summary": "",
-        "error": "",
-    }
+class Run(TypedDict, total=False):
+    id: str
+    company_id: str
+    agent_id: str
+    task_id: str
+    status: str  # running | succeeded | failed | cancelled
+    started_at: str
+    finished_at: str
+    cost_cents: int
+    summary: str
+    logs: list[str]
+
+
+class Approval(TypedDict, total=False):
+    id: str
+    company_id: str
+    agent_id: str
+    kind: str  # strategy | spend | tool | hire
+    title: str
+    detail: str
+    status: str  # pending | approved | rejected
+    created_at: str
+    resolved_at: str
+    resolved_by: str
