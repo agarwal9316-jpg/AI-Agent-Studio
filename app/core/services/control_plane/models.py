@@ -20,6 +20,8 @@ TASK_STATUSES = (
     "cancelled",
 )
 COMPANY_STATUSES = ("active", "paused", "archived")
+APPROVAL_TYPES = ("hire_agent", "strategy", "budget_override", "other")
+APPROVAL_STATUSES = ("pending", "approved", "rejected")
 
 
 def empty_company(
@@ -95,6 +97,7 @@ def empty_task(
         "priority": int(priority),
         "goal_path": [],
         "checkout_by": "",
+        "blockers": [],
         "comments": [],
         "created_at": "",
         "updated_at": "",
