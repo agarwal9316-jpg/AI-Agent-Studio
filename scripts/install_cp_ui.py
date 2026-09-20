@@ -3,12 +3,30 @@
 from __future__ import annotations
 import base64
 import zlib
+import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PAYLOAD = ROOT / "scripts" / "refactor_payload"
 PARTS = ROOT / "scripts" / "cp_parts"
+EMBED_PARTS = ROOT / "scripts" / "cp_embed_parts"
 PREFIX = "cp_ui"
+
+
+def _run_embedded() -> bool:
+    chunks = sorted(EMBED_PARTS.glob("embed.p*.txt"))
+    if not chunks:
+        emb = ROOT / "scripts" / "install_cp_embedded.py"
+        if emb.is_file() and emb.stat().st_size > 5000:
+            subprocess.run([sys.executable, str(emb)], cwd=str(ROOT), check=False)
+            return True
+        return False
+    text = "".join(p.read_text(encoding="utf-8") for p in chunks)
+    dest = ROOT / "scripts" / "install_cp_embedded.py"
+    dest.write_text(text, encoding="utf-8")
+    subprocess.run([sys.executable, str(dest)], cwd=str(ROOT), check=False)
+    return True
 
 
 def _join_parts() -> bool:
@@ -80,6 +98,9 @@ def _from_payload() -> bool:
 
 
 def main() -> None:
+    if _run_embedded():
+        print("Control plane UI + modules installed (embedded).")
+        return
     ok = _join_parts()
     if not ok:
         ok = _from_payload()
