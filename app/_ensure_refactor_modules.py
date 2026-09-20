@@ -78,6 +78,21 @@ def _ensure_task_watch() -> None:
     subprocess.run([sys.executable, str(script)], cwd=str(_ROOT), check=False)
 
 
+def _ensure_control_plane_ui() -> None:
+    """Install control plane service + Control plane page if missing."""
+    service = _ROOT / "app/core/services/control_plane/service.py"
+    page = _ROOT / "app/ui/pages/control_plane_page.py"
+    need = (not service.is_file() or service.stat().st_size < 5000) or (
+        not page.is_file() or page.stat().st_size < 5000
+    )
+    if not need:
+        return
+    script = _ROOT / "scripts" / "install_cp_ui.py"
+    if not script.is_file():
+        return
+    subprocess.run([sys.executable, str(script)], cwd=str(_ROOT), check=False)
+
+
 def _write_health(status: str, details: str = "") -> None:
     """Write data/last_materialize.txt for About/Diagnostics and support."""
     try:
@@ -100,6 +115,14 @@ def _write_health(status: str, details: str = "") -> None:
             else:
                 state = f"ok({path.stat().st_size})"
             lines.append(f"module={rel}:{state}")
+        cp = _ROOT / "app/core/services/control_plane/service.py"
+        page = _ROOT / "app/ui/pages/control_plane_page.py"
+        lines.append(
+            f"module=control_plane/service.py:{'ok' if cp.is_file() and cp.stat().st_size > 5000 else 'missing'}"
+        )
+        lines.append(
+            f"module=control_plane_page.py:{'ok' if page.is_file() and page.stat().st_size > 5000 else 'missing'}"
+        )
         (data / "last_materialize.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
     except OSError:
         pass
@@ -108,6 +131,7 @@ def _write_health(status: str, details: str = "") -> None:
 def ensure_refactor_modules(*, quiet: bool = True) -> None:
     """Materialize any missing/stub refactor modules. Safe to call every launch."""
     _ensure_task_watch()
+    _ensure_control_plane_ui()
     if not needs_materialize():
         _write_health("ok", "no_materialize_needed")
         return
