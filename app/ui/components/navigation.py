@@ -11,6 +11,39 @@ from typing import Callable, Sequence
 
 Hub = tuple[str, tuple[str, ...]]
 
+# Canonical page names (sidebar + router must agree)
+NAV_ITEMS: tuple[str, ...] = (
+    "Home",
+    "Help",
+    "Chat",
+    "Team",
+    "Models",
+    "Monitor",
+    "Chats",
+    "Track",
+    "Control plane",
+    "Work",
+    "Approvals",
+    "Patches",
+    "Knowledge",
+    "Notes",
+    "Channels",
+    "Automations",
+    "Plugins",
+    "Schedule",
+    "Org chart",
+    "Memory",
+    "Projects",
+    "Company",
+    "CEO",
+    "Agents",
+    "Tasks",
+    "Runs",
+    "Usage",
+    "Settings",
+    "About",
+)
+
 
 def nav_hubs(*, simple_ui: bool) -> list[Hub]:
     """Return sidebar hub sections for simple or full UI mode."""
@@ -26,6 +59,7 @@ def nav_hubs(*, simple_ui: bool) -> list[Hub]:
         (
             "WORKSPACE",
             (
+                "Control plane",
                 "Work",
                 "Approvals",
                 "Knowledge",
@@ -102,3 +136,34 @@ def all_nav_page_names(*, simple_ui: bool) -> list[str]:
     for _, pages in nav_hubs(simple_ui=simple_ui):
         names.extend(pages)
     return names
+
+
+def hub_description(title: str) -> str:
+    """Short tooltip for hub section headers."""
+    return {
+        "MENU": "Everyday screens",
+        "PRIMARY": "Main workspace",
+        "WORKSPACE": "Team work, approvals, knowledge",
+        "MORE": "Advanced tools and settings",
+        "START HERE": "Getting started",
+        "CHAT": "Conversations",
+        "WORK": "Tasks and runs",
+    }.get(title, title)
+
+
+def page_description(name: str) -> str:
+    """Short tooltip for a nav page button."""
+    return {
+        "Home": "Start here — guided steps",
+        "Chat": "Talk to AI",
+        "Team": "Multi-agent team runs",
+        "Control plane": "Paperclip-style company OS — hire agents, tasks, budgets, heartbeats",
+        "Work": "Work board by status",
+        "Approvals": "Tool and board approvals",
+        "Org chart": "Company org structure",
+        "Models": "LLM providers and models",
+        "Monitor": "Live activity",
+        "Usage": "Token and cost usage",
+        "Settings": "API keys and preferences",
+        "Help": "Guides in plain English",
+    }.get(name, name)

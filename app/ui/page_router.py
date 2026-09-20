@@ -33,6 +33,9 @@ def page_builders(app: "AppWindow") -> dict[str, Callable[[], None]]:
         ).page_chats(app),
         "Track": app._page_track,
         "Work": app._page_work_board,
+        "Control plane": lambda: __import__(
+            "app.ui.pages.control_plane_page", fromlist=["page_control_plane"]
+        ).page_control_plane(app),
         "Approvals": app._page_approvals,
         "Patches": app._page_patches,
         "Knowledge": app._page_knowledge,
