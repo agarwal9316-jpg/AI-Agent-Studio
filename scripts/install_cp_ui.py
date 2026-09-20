@@ -8,12 +8,30 @@ ROOT = Path(__file__).resolve().parents[1]
 PAYLOAD = ROOT / "scripts" / "refactor_payload"
 PREFIX = "cp_ui"
 
+def _load_b64() -> str:
+    texts = []
+    # Prefer full z00/z01/z02 if valid
+    for i in range(10):
+        p = PAYLOAD / f"{PREFIX}.z{i:02d}.b64"
+        a = PAYLOAD / f"{PREFIX}.z{i:02d}a.b64"
+        b = PAYLOAD / f"{PREFIX}.z{i:02d}b.b64"
+        if a.exists():
+            t = a.read_text(encoding="utf-8").strip()
+            if b.exists():
+                t += b.read_text(encoding="utf-8").strip()
+            texts.append(t)
+        elif p.exists():
+            t = p.read_text(encoding="utf-8").strip()
+            if t.startswith("PLACEHOLDER") or len(t) < 100:
+                continue
+            texts.append(t)
+    return "".join(texts)
+
 def main() -> None:
-    parts = sorted(PAYLOAD.glob(f"{PREFIX}.z*.b64"))
-    if not parts:
+    b64 = _load_b64()
+    if not b64:
         print("No cp_ui payload chunks found")
         return
-    b64 = "".join(p.read_text(encoding="utf-8").strip() for p in parts)
     raw = zlib.decompress(base64.b64decode(b64))
     header, body = raw.split(b"\n--\n", 1)
     offset = 0
