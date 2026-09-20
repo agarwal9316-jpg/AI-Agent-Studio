@@ -10,7 +10,16 @@ ADAPTER_TYPES = (
     "http",            # POST webhook / fire-and-forget
 )
 
-AGENT_STATUSES = ("idle", "running", "paused", "error", "budget_exceeded")
+AGENT_STATUSES = (
+    "idle",
+    "running",
+    "paused",
+    "error",
+    "budget_exceeded",
+    "terminated",
+)
+# pause_reason values (Paperclip: pauseReason = "budget" | board | error | ...)
+PAUSE_REASONS = ("", "budget", "board", "error", "manual")
 TASK_STATUSES = (
     "backlog",
     "todo",
@@ -21,6 +30,8 @@ TASK_STATUSES = (
     "cancelled",
 )
 COMPANY_STATUSES = ("active", "paused", "archived")
+# Soft alert at 80% of monthly budget (Paperclip 80% soft / 100% hard)
+BUDGET_SOFT_ALERT_RATIO = 0.8
 
 
 def empty_company(
@@ -63,13 +74,16 @@ def empty_agent(
         "role": role,
         "reports_to": reports_to or "",
         "status": "idle",
+        "pause_reason": "",
         "adapter_type": adapter_type if adapter_type in ADAPTER_TYPES else "studio_builtin",
         "adapter_config": dict(adapter_config or {}),
         "budget_monthly_cents": int(budget_monthly_cents or 0),
         "spent_monthly_cents": 0,
+        "budget_window": "monthly_utc",  # or "lifetime" (Paperclip window kinds)
         "heartbeat_enabled": True,
         "heartbeat_interval_sec": max(30, int(heartbeat_interval_sec or 300)),
         "last_heartbeat_at": "",
+        "wake_pending": False,  # set True on assignment / approval to force next tick
         "capabilities": capabilities or "",
         "created_at": "",
         "updated_at": "",
@@ -94,7 +108,7 @@ def empty_task(
         "assignee_id": assignee_id or "",
         "parent_id": parent_id or "",
         "priority": int(priority),
-        "goal_path": [],
+        "goal_path": [],  # list of ancestor titles for goal alignment
         "checkout_by": "",
         "comments": [],
         "created_at": "",
